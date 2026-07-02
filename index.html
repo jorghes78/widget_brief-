@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WES — Brief di commessa WES (Fiere)</title>
+<style>
+  :root{
+    --navy:#1F3864;
+    --navy-mid:#2E5496;
+    --cream:#F7F5F0;
+    --paper:#FFFFFF;
+    --ink:#26282B;
+    --ink-soft:#5C6068;
+    --line:#DAD8D0;
+    --must:#B8562F;
+    --must-bg:#FBEDE6;
+    --nice:#4E7A63;
+    --nice-bg:#EAF1EC;
+    --go:#3E7A4C;
+    --wait:#C17817;
+    --stop:#B8562F;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Georgia','EB Garamond',serif;
+    line-height:1.5;
+  }
+  .shell{max-width:880px;margin:0 auto;padding:40px 28px 80px;}
+
+  header.doc-head{
+    border-bottom:3px solid var(--navy);
+    padding-bottom:18px;
+    margin-bottom:28px;
+  }
+  .eyebrow{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--navy-mid);
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:28px;
+    margin:0 0 6px;
+    color:var(--navy);
+    font-weight:600;
+  }
+  .subtitle{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  /* gate / completeness bar */
+  .gate{
+    position:sticky;
+    top:0;
+    z-index:5;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 18px;
+    margin-bottom:32px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    box-shadow:0 2px 6px rgba(31,56,100,.06);
+  }
+  .gate-label{
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .gate-track{
+    flex:1;
+    height:8px;
+    background:#EDECE7;
+    border-radius:4px;
+    overflow:hidden;
+    position:relative;
+  }
+  .gate-fill{
+    height:100%;
+    width:0%;
+    background:var(--stop);
+    transition:width .35s ease, background .35s ease;
+  }
+  .gate-status{
+    font-size:13px;
+    font-weight:700;
+    white-space:nowrap;
+    min-width:150px;
+    text-align:right;
+  }
+
+  section.block{margin-bottom:34px;}
+  .block-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:8px;
+    margin-bottom:16px;
+  }
+  .block-num{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    color:var(--navy-mid);
+    letter-spacing:.08em;
+  }
+  h2{
+    font-size:18px;
+    margin:0;
+    color:var(--navy);
+    font-weight:600;
+  }
+  .tag{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:2px 8px;
+    border-radius:10px;
+    font-weight:700;
+  }
+  .tag.must{background:var(--must-bg);color:var(--must);}
+  .tag.nice{background:var(--nice-bg);color:var(--nice);}
+
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px 18px;
+  }
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.full{grid-column:1 / -1;}
+  label{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  label .req{color:var(--must);margin-left:3px;}
+  input, textarea, select{
+    font-family:'Georgia','EB Garamond',serif;
+    font-size:14.5px;
+    color:var(--ink);
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--paper);
+    resize:vertical;
+  }
+  textarea{min-height:56px;}
+  input:focus, textarea:focus, select:focus{
+    outline:none;
+    border-color:var(--navy-mid);
+    box-shadow:0 0 0 3px rgba(46,84,150,.12);
+  }
+  input.filled, textarea.filled{border-color:#C9CFB8;background:#FDFDFB;}
+
+  .note-block{
+    background:var(--paper);
+    border:1px dashed var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+
+  .team-block{
+    background:rgba(31,56,100,.05);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin-top:14px;
+  }
+  .team-block-label{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--navy-mid);
+    margin-bottom:12px;
+  }
+  .team-grid{grid-template-columns:repeat(3,1fr);}
+
+  .file-hint{
+    display:block;
+    font-size:11.5px;
+    margin-top:8px;
+  }
+  input[type="file"]{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12.5px;
+    padding:8px 10px;
+  }
+
+  .decision-panel{
+    border:2px solid var(--navy);
+    border-radius:var(--radius);
+    padding:26px 28px 30px;
+    background:var(--paper);
+    box-shadow:0 4px 14px rgba(31,56,100,.08);
+    transition:border-color .3s ease, background .3s ease;
+  }
+  .decision-panel .block-head{border-bottom-color:var(--line);}
+  .decision-panel h2{font-size:22px;}
+  .decision-sub{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:-6px 0 18px;
+  }
+  .decision-panel select{
+    font-size:17px;
+    font-weight:600;
+    padding:14px 16px;
+  }
+  .decision-panel.go{border-color:var(--go);background:var(--nice-bg);}
+  .decision-panel.stop{border-color:var(--stop);background:var(--must-bg);}
+
+  .checklist{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 28px;
+  }
+  .checklist-col + .checklist-col{
+    border-left:1px solid var(--line);
+    padding-left:28px;
+  }
+  .checklist-col-title{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin:0 0 10px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .checklist-col-title.must{color:var(--must);}
+  .checklist-col-title.nice{color:var(--nice);}
+  .check-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:5px 0;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+  }
+  .dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--stop);
+    flex-shrink:0;
+  }
+  .dot.ok{background:var(--go);}
+  .check-row span.label-txt{color:var(--ink-soft);}
+  .check-row.ok span.label-txt{color:var(--ink);}
+
+  .actions{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px;
+    margin-top:30px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+  }
+  button{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:var(--radius);
+    border:1px solid var(--navy);
+    background:var(--navy);
+    color:#fff;
+    cursor:pointer;
+  }
+  button.secondary{
+    background:transparent;
+    color:var(--navy);
+  }
+  button:active{transform:translateY(1px);}
+  .toast{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12.5px;
+    color:var(--nice);
+    align-self:center;
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .toast.show{opacity:1;}
+  .autosave-status{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    align-self:center;
+    margin-left:auto;
+  }
+
+  footer.doc-foot{
+    margin-top:44px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    letter-spacing:.04em;
+  }
+
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  @media(max-width:640px){
+    .field-grid{grid-template-columns:1fr;}
+    .gate{flex-wrap:wrap;}
+    .gate-status{text-align:left;}
+    .checklist{grid-template-columns:1fr;}
+    .checklist-col + .checklist-col{
+      border-left:none;
+      padding-left:0;
+      border-top:1px solid var(--line);
+      padding-top:14px;
+      margin-top:10px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="doc-head">
+    <div class="eyebrow">Progetto Evolution — Standardizzazione brief di commessa</div>
+    <h1>Brief di commessa WES (Fiere)</h1>
+    <div class="subtitle">Da compilare in call con il cliente e/o con le informazioni ricevute</div>
+  </header>
+
+  <div class="gate">
+    <div class="gate-label" id="gateLabel">Elementi obbligatori</div>
+    <div class="gate-track" role="progressbar" aria-labelledby="gateLabel" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><div class="gate-fill" id="gateFill"></div></div>
+    <div class="gate-status" id="gateStatus" aria-live="polite" aria-atomic="true">0 di 7 — Progetto non avviabile</div>
+  </div>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">01</span>
+      <h2>Anagrafica commessa</h2>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label for="f-cliente">Cliente</label><input id="f-cliente" type="text" placeholder="es. Vetraria Moretti S.r.l." data-track="anagrafica"></div>
+      <div class="field"><label for="f-fiera">Fiera ed edizione</label><input id="f-fiera" type="text" placeholder="es. SPS Italia 2026" data-track="anagrafica"></div>
+      <div class="field"><label for="f-data-inizio">Data di inizio</label><input id="f-data-inizio" type="date" data-track="anagrafica"></div>
+      <div class="field"><label for="f-data-fine">Data di fine</label><input id="f-data-fine" type="date" data-track="anagrafica"></div>
+      <div class="field"><label for="f-metratura">Metratura assegnata</label><input id="f-metratura" type="text" placeholder="es. 48 mq" data-track="anagrafica"></div>
+      <div class="field"><label for="f-databrief">Data raccolta brief</label><input id="f-databrief" type="date" data-track="anagrafica"></div>
+      <div class="field"><label for="f-referente">Referente cliente</label><input id="f-referente" type="text" placeholder="es. Laura Conti" data-track="anagrafica"></div>
+    </div>
+
+    <div class="team-block">
+      <div class="team-block-label">Team WES assegnato</div>
+      <div class="field-grid team-grid">
+        <div class="field"><label for="f-account">Account WES</label>
+          <select id="f-account" data-track="anagrafica">
+            <option value="">Non ancora assegnato</option>
+            <option>Account 1</option>
+            <option>Account 2</option>
+            <option>Account 3</option>
+            <option>Account 4</option>
+            <option>Account 5</option>
+          </select>
+        </div>
+        <div class="field"><label for="f-progettista">Progettista WES</label>
+          <select id="f-progettista" data-track="anagrafica">
+            <option value="">Non ancora assegnato</option>
+            <option>Progettista 1</option>
+            <option>Progettista 2</option>
+            <option>Progettista 3</option>
+            <option>Progettista 4</option>
+            <option>Progettista 5</option>
+          </select>
+        </div>
+        <div class="field"><label for="f-pm">PM WES</label>
+          <select id="f-pm" data-track="anagrafica">
+            <option value="">Non ancora assegnato</option>
+            <option>PM 1</option>
+            <option>PM 2</option>
+            <option>PM 3</option>
+            <option>PM 4</option>
+            <option>PM 5</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">02</span>
+      <h2>Informazioni obbligatorie</h2>
+      <span class="tag must">Must have</span>
+    </div>
+    <div class="field-grid">
+      <div class="field full">
+        <label for="f-prodotti">Prodotti da esporre <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="f-prodotti" placeholder="Numero, tipologia, misure, peso, modalità di esposizione (vetrine, supporti, altro)" data-req="1" data-track="must" required aria-required="true"></textarea>
+      </div>
+      <div class="field full">
+        <label for="f-obiettivi">Obiettivi e funzione dello stand <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="f-obiettivi" placeholder="Cosa deve accadere nello spazio: eventi, presentazioni, meeting, incontri riservati" data-req="1" data-track="must" required aria-required="true"></textarea>
+      </div>
+      <div class="field full">
+        <label for="f-brand-files">Brand identity <span class="req" aria-hidden="true">*</span></label>
+        <div class="file-hint">Materiali forniti dal cliente: loghi, palette colori, presentazione aziendale, foto di stand precedenti o da usare in grafica</div>
+        <input type="file" id="f-brand-files" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.svg,.ai,.eps" data-req="1" data-track="must" required aria-required="true">
+      </div>
+      <div class="field">
+        <label for="f-personale">Personale interno in fiera <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-personale" type="text" placeholder="Numero anche a fascia, es. 4–6" data-req="1" data-track="must" required aria-required="true">
+      </div>
+      <div class="field">
+        <label for="f-budget">Budget indicativo <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-budget" type="text" placeholder="es. 25.000 € - 30.000 €" data-req="1" data-track="must" required aria-required="true">
+      </div>
+      <div class="field full">
+        <label for="f-elementi">Elementi richiesti per lo stand <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="f-elementi" placeholder="Sale meeting, arredi particolari, spazi polifunzionali" data-req="1" data-track="must" required aria-required="true"></textarea>
+      </div>
+      <div class="field full">
+        <label for="f-servizi">Servizi accessori <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="f-servizi" placeholder="Catering, hostess, altri servizi" data-req="1" data-track="must" required aria-required="true"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">03</span>
+      <h2>Approfondimenti desiderati</h2>
+      <span class="tag nice">Nice to have</span>
+    </div>
+    <div class="field-grid">
+      <div class="field full"><label for="f-concorrenti">Concorrenti di riferimento in fiera</label><textarea id="f-concorrenti" placeholder="es. Fintech Solutions, DataCore Group" data-track="nice"></textarea></div>
+      <div class="field full"><label for="f-comunicazione">Obiettivi di comunicazione</label><textarea id="f-comunicazione" placeholder="Lancio di un nuovo prodotto, anniversario aziendale, ingresso in un nuovo mercato" data-track="nice"></textarea></div>
+      <div class="field full"><label for="f-stile">Indirizzo di stile e design, riferimenti visivi</label><textarea id="f-stile" placeholder="es. Minimal, materiali naturali, illuminazione calda" data-track="nice"></textarea></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">04</span>
+      <h2>Note raccolte in call</h2>
+    </div>
+    <div class="note-block">
+      <div class="field full">
+        <label for="f-note">Informazioni non scritte, preferenze o vincoli emersi nella conversazione</label>
+        <textarea id="f-note" style="min-height:90px" placeholder="Quanto non rientra nei campi strutturati ma è rilevante per la progettazione" data-track="note"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">05</span>
+      <h2>Checklist finale</h2>
+    </div>
+    <div class="checklist">
+      <div class="checklist-col">
+        <h3 class="checklist-col-title must">Must have</h3>
+        <div id="checklistMust"></div>
+      </div>
+      <div class="checklist-col">
+        <h3 class="checklist-col-title nice">Nice to have</h3>
+        <div id="checklistNice"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block decision-panel">
+    <div class="block-head">
+      <span class="block-num">06</span>
+      <h2>Decisione di progetto</h2>
+    </div>
+    <div class="decision-sub">Decisione finale sulla base delle informazioni raccolte e valutate.</div>
+    <div class="field full">
+      <label for="f-decisione" class="sr-only">Decisione di progetto</label>
+      <select id="f-decisione">
+        <option value="">Da valutare</option>
+        <option>Go — commessa confermata</option>
+        <option>No-go — opportunità chiusa</option>
+      </select>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button id="btnCopy">Copia sintesi testuale</button>
+    <button id="btnDownloadFiles">Scarica materiali Brand identity</button>
+    <button id="btnPrint">Stampa / PDF</button>
+    <button class="secondary" id="btnReset">Svuota campi</button>
+    <span class="toast" id="toast">Copiato negli appunti</span>
+    <span class="autosave-status" id="autosaveStatus"></span>
+  </div>
+
+  <footer class="doc-foot">
+    Progetto EVOLUTION | Riservato — uso interno · Bozza di lavoro, Progetto 4.1 — Standardizzazione brief e schede di commessa
+  </footer>
+
+</div>
+
+<script>
+const mustFields = Array.from(document.querySelectorAll('[data-req="1"]'));
+const niceFields = Array.from(document.querySelectorAll('[data-track="nice"]'));
+const gateFill = document.getElementById('gateFill');
+const gateStatus = document.getElementById('gateStatus');
+const checklistMust = document.getElementById('checklistMust');
+const checklistNice = document.getElementById('checklistNice');
+const decisionPanel = document.querySelector('.decision-panel');
+const decisionSelect = document.getElementById('f-decisione');
+
+// collegamento diretto campo <-> riga checklist tramite indice numerico,
+// invece di far combaciare il testo delle etichette (più fragile)
+mustFields.forEach((f, i) => { f.dataset.reqIndex = i; });
+niceFields.forEach((f, i) => { f.dataset.niceIndex = i; });
+
+function buildChecklistColumn(fields, container, indexAttr){
+  container.innerHTML = '';
+  fields.forEach((f, i) => {
+    const lbl = f.closest('.field').querySelector('label').textContent.replace('*','').trim();
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    row.dataset[indexAttr] = i;
+    row.innerHTML = `<div class="dot" aria-hidden="true"></div><span class="label-txt">${lbl}</span><span class="sr-only status-txt">— da compilare</span>`;
+    container.appendChild(row);
+  });
+}
+buildChecklistColumn(mustFields, checklistMust, 'reqIndex');
+buildChecklistColumn(niceFields, checklistNice, 'niceIndex');
+
+function isFilled(el){
+  if(el.type === 'file') return el.files && el.files.length > 0;
+  return !!(el.value && el.value.trim().length > 0);
+}
+
+function refreshColumn(fields, container, dataAttr){
+  fields.forEach((f, i) => {
+    const ok = isFilled(f);
+    const row = container.querySelector(`.check-row[data-${dataAttr}="${i}"]`);
+    f.classList.toggle('filled', ok);
+    if(row){
+      row.querySelector('.dot').classList.toggle('ok', ok);
+      row.classList.toggle('ok', ok);
+      row.querySelector('.status-txt').textContent = ok ? '— compilato' : '— da compilare';
+    }
+  });
+}
+
+function refresh(){
+  refreshColumn(mustFields, checklistMust, 'req-index');
+  refreshColumn(niceFields, checklistNice, 'nice-index');
+
+  const filledCount = mustFields.filter(isFilled).length;
+  const total = mustFields.length;
+  const pct = Math.round((filledCount/total)*100);
+  gateFill.style.width = pct + '%';
+  document.querySelector('.gate-track').setAttribute('aria-valuenow', filledCount);
+
+  let color, statusText;
+  if(filledCount === total){
+    color = 'var(--go)'; statusText = `${filledCount} di ${total} — avviabile`;
+  } else if(filledCount >= Math.ceil(total*0.5)){
+    color = 'var(--wait)'; statusText = `${filledCount} di ${total} — parziale`;
+  } else {
+    color = 'var(--stop)'; statusText = `${filledCount} di ${total} — Progetto non avviabile`;
+  }
+  gateFill.style.background = color;
+  gateStatus.textContent = statusText;
+  gateStatus.style.color = color;
+}
+
+function updateDecisionPanel(){
+  decisionPanel.classList.remove('go', 'stop');
+  if(decisionSelect.value.startsWith('Go')) decisionPanel.classList.add('go');
+  else if(decisionSelect.value.startsWith('No-go')) decisionPanel.classList.add('stop');
+}
+
+// event delegation sul documento: più robusto di attaccare un listener
+// a ogni singolo campo, ed evita problemi di timing sugli elementi dinamici
+document.addEventListener('input', (e) => {
+  if(e.target.matches('input, textarea, select')) refresh();
+}, true);
+document.addEventListener('change', (e) => {
+  if(e.target.matches('input, textarea, select')) refresh();
+  if(e.target === decisionSelect) updateDecisionPanel();
+}, true);
+
+refresh();
+updateDecisionPanel();
+
+// salvataggio automatico locale (localStorage), per non perdere il lavoro
+// in caso di chiusura accidentale, crash o interruzione: i file caricati
+// (Brand identity) non sono inclusi, per limite del browser non sono
+// riassegnabili a un input file via script — vanno ricaricati manualmente
+const AUTOSAVE_KEY = 'wes-brief-draft-v1';
+const autosaveStatus = document.getElementById('autosaveStatus');
+
+function collectDraftData(){
+  const data = {};
+  document.querySelectorAll('input, textarea, select').forEach(el=>{
+    if(el.type === 'file' || !el.id) return;
+    data[el.id] = el.value;
+  });
+  return data;
+}
+
+function saveDraft(){
+  try{
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: Date.now(), data: collectDraftData() }));
+    if(autosaveStatus){
+      const t = new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+      autosaveStatus.textContent = `Bozza salvata automaticamente alle ${t}`;
+    }
+  } catch(e){ /* storage non disponibile: il salvataggio automatico è solo un extra, si prosegue senza */ }
+}
+
+function clearDraft(){
+  try{ localStorage.removeItem(AUTOSAVE_KEY); } catch(e){}
+  if(autosaveStatus) autosaveStatus.textContent = '';
+}
+
+function restoreDraftIfPresent(){
+  let raw;
+  try{ raw = localStorage.getItem(AUTOSAVE_KEY); } catch(e){ return; }
+  if(!raw) return;
+  let parsed;
+  try{ parsed = JSON.parse(raw); } catch(e){ return; }
+  if(!parsed || !parsed.data) return;
+  const hasContent = Object.values(parsed.data).some(v => v && v.trim && v.trim().length > 0);
+  if(!hasContent) return;
+  const when = new Date(parsed.savedAt).toLocaleString('it-IT');
+  if(!confirm(`È stata trovata una bozza salvata automaticamente del ${when}. Vuoi ripristinarla?\n\n(I file caricati in Brand identity non vengono salvati automaticamente e vanno ricaricati manualmente.)`)) return;
+  Object.entries(parsed.data).forEach(([id, value])=>{
+    const el = document.getElementById(id);
+    if(el) el.value = value;
+  });
+  refresh();
+  updateDecisionPanel();
+}
+
+restoreDraftIfPresent();
+setInterval(saveDraft, 20000);
+window.addEventListener('beforeunload', saveDraft);
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Vuoi svuotare tutti i campi? L\'operazione non è reversibile.')) return;
+  document.querySelectorAll('input, textarea, select').forEach(el=>{
+    if(el.tagName === 'SELECT') el.selectedIndex = 0;
+    else el.value = '';
+  });
+  refresh();
+  updateDecisionPanel();
+  clearDraft();
+});
+
+document.getElementById('btnDownloadFiles').addEventListener('click', ()=>{
+  const files = document.getElementById('f-brand-files').files;
+  if(!files || files.length === 0){
+    alert('Nessun file caricato per Brand identity.');
+    return;
+  }
+  Array.from(files).forEach(file=>{
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+});
+
+document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
+
+document.getElementById('btnCopy').addEventListener('click', ()=>{
+  const get = (label) => {
+    const field = Array.from(document.querySelectorAll('.field')).find(f=>{
+      const l = f.querySelector('label');
+      return l && l.textContent.replace('*','').trim() === label;
+    });
+    if(!field) return '';
+    const input = field.querySelector('input,textarea,select');
+    return input ? input.value : '';
+  };
+
+  const sections = [
+    ['ANAGRAFICA COMMESSA', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Metratura assegnata','Referente cliente','Account WES','Data raccolta brief','Progettista WES','PM WES']],
+    ['INFORMAZIONI OBBLIGATORIE', ['Prodotti da esporre','Obiettivi e funzione dello stand','Brand identity','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
+    ['APPROFONDIMENTI DESIDERATI', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Indirizzo di stile e design, riferimenti visivi']],
+    ['NOTE RACCOLTE IN CALL', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
+    ['DECISIONE DI PROGETTO', ['Decisione di progetto']]
+  ];
+
+  let out = 'BRIEF DI COMMESSA WES (FIERE)\n';
+  sections.forEach(([title, labels])=>{
+    out += `\n${title}\n`;
+    labels.forEach(l=>{
+      if(l === 'Brand identity'){
+        const n = document.getElementById('f-brand-files').files.length;
+        out += `Brand identity — materiali caricati: ${n > 0 ? n + ' file' : 'nessuno'}\n`;
+        return;
+      }
+      out += `${l}: ${get(l) || '—'}\n`;
+    });
+  });
+
+  navigator.clipboard.writeText(out).then(()=>{
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  });
+});
+</script>
+</body>
+</html>
