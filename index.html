@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WES — Brief di commessa WES (Fiere)</title>
+<title>WES — Brief di commessa (Fiere)</title>
 <style>
   :root{
     --navy:#1F3864;
@@ -201,6 +201,41 @@
     padding:8px 10px;
   }
 
+  .stand-elements{
+    background:var(--must-bg);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .stand-element{
+    padding:12px 0;
+    border-bottom:1px solid rgba(184,86,47,.15);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .stand-element:first-of-type{padding-top:2px;}
+  .stand-element:last-child{border-bottom:none;padding-bottom:2px;}
+  .stand-element-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .stand-element-name{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .stand-element-head select{
+    width:150px;
+    flex-shrink:0;
+  }
+  .stand-element input[type="text"]{
+    font-size:13.5px;
+  }
+
   .decision-panel{
     border:2px solid var(--navy);
     border-radius:var(--radius);
@@ -307,16 +342,6 @@
     margin-left:auto;
   }
 
-  footer.doc-foot{
-    margin-top:44px;
-    padding-top:14px;
-    border-top:1px solid var(--line);
-    font-family:'Helvetica Neue',Arial,sans-serif;
-    font-size:10.5px;
-    color:var(--ink-soft);
-    letter-spacing:.04em;
-  }
-
   .sr-only{
     position:absolute;
     width:1px;height:1px;
@@ -346,15 +371,15 @@
 <div class="shell">
 
   <header class="doc-head">
-    <div class="eyebrow">Progetto Evolution — Standardizzazione brief di commessa</div>
-    <h1>Brief di commessa WES (Fiere)</h1>
-    <div class="subtitle">Da compilare in call con il cliente e/o con le informazioni ricevute</div>
+    <div class="eyebrow">Worldwide Exhibition System</div>
+    <h1>Brief di commessa (Fiere)</h1>
+    <div class="subtitle">Modello per la raccolta delle informazioni necessarie alla progettazione</div>
   </header>
 
   <div class="gate">
     <div class="gate-label" id="gateLabel">Elementi obbligatori</div>
-    <div class="gate-track" role="progressbar" aria-labelledby="gateLabel" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><div class="gate-fill" id="gateFill"></div></div>
-    <div class="gate-status" id="gateStatus" aria-live="polite" aria-atomic="true">0 di 7 — Progetto non avviabile</div>
+    <div class="gate-track" role="progressbar" aria-labelledby="gateLabel" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div class="gate-fill" id="gateFill"></div></div>
+    <div class="gate-status" id="gateStatus" aria-live="polite" aria-atomic="true">0 di 6 — Progetto non avviabile</div>
   </div>
 
   <section class="block">
@@ -364,12 +389,13 @@
     </div>
     <div class="field-grid">
       <div class="field"><label for="f-cliente">Cliente</label><input id="f-cliente" type="text" placeholder="es. Vetraria Moretti S.r.l." data-track="anagrafica"></div>
-      <div class="field"><label for="f-fiera">Fiera ed edizione</label><input id="f-fiera" type="text" placeholder="es. SPS Italia 2026" data-track="anagrafica"></div>
       <div class="field"><label for="f-data-inizio">Data di inizio</label><input id="f-data-inizio" type="date" data-track="anagrafica"></div>
-      <div class="field"><label for="f-data-fine">Data di fine</label><input id="f-data-fine" type="date" data-track="anagrafica"></div>
-      <div class="field"><label for="f-metratura">Metratura assegnata</label><input id="f-metratura" type="text" placeholder="es. 48 mq" data-track="anagrafica"></div>
-      <div class="field"><label for="f-databrief">Data raccolta brief</label><input id="f-databrief" type="date" data-track="anagrafica"></div>
       <div class="field"><label for="f-referente">Referente cliente</label><input id="f-referente" type="text" placeholder="es. Laura Conti" data-track="anagrafica"></div>
+      <div class="field"><label for="f-data-fine">Data di fine</label><input id="f-data-fine" type="date" data-track="anagrafica"></div>
+      <div class="field"><label for="f-fiera">Fiera ed edizione</label><input id="f-fiera" type="text" placeholder="es. SPS Italia 2026" data-track="anagrafica"></div>
+      <div class="field"><label for="f-databrief">Data raccolta brief</label><input id="f-databrief" type="date" data-track="anagrafica"></div>
+      <div class="field"><label for="f-metratura">Metratura stand</label><input id="f-metratura" type="text" placeholder="es. 48 mq" data-track="anagrafica"></div>
+      <div class="field"><label for="f-data-proposta">Data concordata per la presentazione delle proposta</label><input id="f-data-proposta" type="date" data-track="anagrafica"></div>
     </div>
 
     <div class="team-block">
@@ -378,31 +404,38 @@
         <div class="field"><label for="f-account">Account WES</label>
           <select id="f-account" data-track="anagrafica">
             <option value="">Non ancora assegnato</option>
-            <option>Account 1</option>
-            <option>Account 2</option>
-            <option>Account 3</option>
-            <option>Account 4</option>
-            <option>Account 5</option>
+            <option>Alberto Battenti</option>
+            <option>Alessandra Rivolta</option>
+            <option>Alessandro Sacha Rattichieri</option>
+            <option>Cristiano Ciscato</option>
+            <option>Gian Luca Marcenaro</option>
+            <option>Giorgio Barbareschi</option>
+            <option>Luca Gregoli</option>
+            <option>Michele Omodeo</option>
+            <option>Sara Corigliano</option>
+            <option>Stefano Grandi</option>
           </select>
         </div>
         <div class="field"><label for="f-progettista">Progettista WES</label>
           <select id="f-progettista" data-track="anagrafica">
             <option value="">Non ancora assegnato</option>
-            <option>Progettista 1</option>
-            <option>Progettista 2</option>
-            <option>Progettista 3</option>
-            <option>Progettista 4</option>
-            <option>Progettista 5</option>
+            <option>Alessandro Multari</option>
+            <option>Chiara Visconti</option>
+            <option>Daniele Lucini</option>
+            <option>Katia Gallina</option>
+            <option>Nicolas Brauchi</option>
+            <option>Wendy Mendola</option>
           </select>
         </div>
         <div class="field"><label for="f-pm">PM WES</label>
           <select id="f-pm" data-track="anagrafica">
             <option value="">Non ancora assegnato</option>
-            <option>PM 1</option>
-            <option>PM 2</option>
-            <option>PM 3</option>
-            <option>PM 4</option>
-            <option>PM 5</option>
+            <option>Alberto Battenti</option>
+            <option>Alessandra Rivolta</option>
+            <option>Cristiano Ciscato</option>
+            <option>Georgia Bacic</option>
+            <option>Gian Luca Marcenaro</option>
+            <option>Michele Omodeo</option>
           </select>
         </div>
       </div>
@@ -416,34 +449,159 @@
       <span class="tag must">Must have</span>
     </div>
     <div class="field-grid">
-      <div class="field full">
-        <label for="f-prodotti">Prodotti da esporre <span class="req" aria-hidden="true">*</span></label>
-        <textarea id="f-prodotti" placeholder="Numero, tipologia, misure, peso, modalità di esposizione (vetrine, supporti, altro)" data-req="1" data-track="must" required aria-required="true"></textarea>
-      </div>
-      <div class="field full">
-        <label for="f-obiettivi">Obiettivi e funzione dello stand <span class="req" aria-hidden="true">*</span></label>
-        <textarea id="f-obiettivi" placeholder="Cosa deve accadere nello spazio: eventi, presentazioni, meeting, incontri riservati" data-req="1" data-track="must" required aria-required="true"></textarea>
-      </div>
-      <div class="field full">
-        <label for="f-brand-files">Brand identity <span class="req" aria-hidden="true">*</span></label>
-        <div class="file-hint">Materiali forniti dal cliente: loghi, palette colori, presentazione aziendale, foto di stand precedenti o da usare in grafica</div>
-        <input type="file" id="f-brand-files" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.svg,.ai,.eps" data-req="1" data-track="must" required aria-required="true">
+      <div class="field">
+        <label for="f-budget">Budget indicativo <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-budget" type="text" placeholder="es. 25.000 € - 30.000 €" data-req="1" data-track="must" required aria-required="true">
       </div>
       <div class="field">
         <label for="f-personale">Personale interno in fiera <span class="req" aria-hidden="true">*</span></label>
         <input id="f-personale" type="text" placeholder="Numero anche a fascia, es. 4–6" data-req="1" data-track="must" required aria-required="true">
       </div>
-      <div class="field">
-        <label for="f-budget">Budget indicativo <span class="req" aria-hidden="true">*</span></label>
-        <input id="f-budget" type="text" placeholder="es. 25.000 € - 30.000 €" data-req="1" data-track="must" required aria-required="true">
-      </div>
-      <div class="field full">
-        <label for="f-elementi">Elementi richiesti per lo stand <span class="req" aria-hidden="true">*</span></label>
-        <textarea id="f-elementi" placeholder="Sale meeting, arredi particolari, spazi polifunzionali" data-req="1" data-track="must" required aria-required="true"></textarea>
+      <div class="field full stand-elements" id="f-elementi-group" data-req="1" data-req-group="stand" data-track="must">
+        <label>Elementi richiesti per lo stand <span class="req" aria-hidden="true">*</span></label>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-appendimento" class="stand-element-name">Appendimento</label>
+            <select id="f-stand-appendimento" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-appendimento-note" class="sr-only">Nota su Appendimento</label>
+          <input type="text" id="f-stand-appendimento-note" placeholder="Solo grafica? Retroilluminato? Con Videowall?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-desk-reception" class="stand-element-name">Desk reception</label>
+            <select id="f-stand-desk-reception" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-desk-reception-note" class="sr-only">Nota su Desk reception</label>
+          <input type="text" id="f-stand-desk-reception-note" placeholder="Lineare? Angolare? Richieste particolari?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-meeting-room" class="stand-element-name">Meeting room (stanza chiusa per riunioni)</label>
+            <select id="f-stand-meeting-room" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-meeting-room-note" class="sr-only">Nota su Meeting room</label>
+          <input type="text" id="f-stand-meeting-room-note" placeholder="Quantità? Per quante persone? Con monitor?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-lounge" class="stand-element-name">Lounge (spazio di accoglienza per clienti)</label>
+            <select id="f-stand-lounge" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-lounge-note" class="sr-only">Nota su Lounge</label>
+          <input type="text" id="f-stand-lounge-note" placeholder="Per quante persone? Con monitor? Privata, Aperta o Semiprivata?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-sedute-aperte" class="stand-element-name">Sedute in area aperta (per incontri informali o a uso bar)</label>
+            <select id="f-stand-sedute-aperte" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-sedute-aperte-note" class="sr-only">Nota su Sedute in area aperta</label>
+          <input type="text" id="f-stand-sedute-aperte-note" placeholder="Per quante persone? Sedie o sgabelli alti? Tavoli rotondi o squadrati?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-bancone-bar" class="stand-element-name">Bancone bar</label>
+            <select id="f-stand-bancone-bar" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-bancone-bar-note" class="sr-only">Nota su Bancone bar</label>
+          <input type="text" id="f-stand-bancone-bar-note" placeholder="Per quante persone di servizio? Con sedute sul fronte?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-cucina" class="stand-element-name">Cucina separata dal magazzino/guardaroba</label>
+            <select id="f-stand-cucina" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-cucina-note" class="sr-only">Nota su Cucina</label>
+          <input type="text" id="f-stand-cucina-note" placeholder="Per quante persone di servizio? Con quale dotazione (lavandino, elettrodomestici, etc.)?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-esposizione" class="stand-element-name">Esposizione prodotti o modelli</label>
+            <select id="f-stand-esposizione" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-esposizione-note" class="sr-only">Nota su Esposizione prodotti o modelli</label>
+          <input type="text" id="f-stand-esposizione-note" placeholder="Quali e quanti prodotti? Misure e pesi? Tipologia ed esposizione (a parete, a terra, etc.)?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-multimediali" class="stand-element-name">Elementi multimediali</label>
+            <select id="f-stand-multimediali" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-multimediali-note" class="sr-only">Nota su Elementi multimediali</label>
+          <input type="text" id="f-stand-multimediali-note" placeholder="Ledwall, schermi standard, monitor touchscreen, tablet, pc, smartphone? Impianto audio e microfoni?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
+            <label for="f-stand-grafica-wes" class="stand-element-name">Grafica a sviluppo WES</label>
+            <select id="f-stand-grafica-wes" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-grafica-wes-note" class="sr-only">Nota su Grafica a sviluppo WES</label>
+          <input type="text" id="f-stand-grafica-wes-note" placeholder="I file esecutivi per la stampa delle grafiche dovranno essere sviluppati da WES o saranno forniti dal cliente?">
+        </div>
       </div>
       <div class="field full">
         <label for="f-servizi">Servizi accessori <span class="req" aria-hidden="true">*</span></label>
         <textarea id="f-servizi" placeholder="Catering, hostess, altri servizi" data-req="1" data-track="must" required aria-required="true"></textarea>
+      </div>
+      <div class="field full">
+        <label for="f-obiettivi">Obiettivi e funzione dello stand <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="f-obiettivi" placeholder="Cosa deve accadere nello stand (es. eventi, presentazioni, conferenze stampa, etc.)?" data-req="1" data-track="must" required aria-required="true"></textarea>
+      </div>
+      <div class="field full">
+        <label for="f-brand-files">Brand identity <span class="req" aria-hidden="true">*</span></label>
+        <div class="file-hint">Materiali forniti dal cliente: loghi, palette colori, presentazione aziendale, stand precedenti, foto da usare in grafica, moodboard, etc.</div>
+        <input type="file" id="f-brand-files" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.svg,.ai,.eps" data-req="1" data-track="must" required aria-required="true">
       </div>
     </div>
   </section>
@@ -456,15 +614,18 @@
     </div>
     <div class="field-grid">
       <div class="field full"><label for="f-concorrenti">Concorrenti di riferimento in fiera</label><textarea id="f-concorrenti" placeholder="es. Fintech Solutions, DataCore Group" data-track="nice"></textarea></div>
-      <div class="field full"><label for="f-comunicazione">Obiettivi di comunicazione</label><textarea id="f-comunicazione" placeholder="Lancio di un nuovo prodotto, anniversario aziendale, ingresso in un nuovo mercato" data-track="nice"></textarea></div>
-      <div class="field full"><label for="f-stile">Indirizzo di stile e design, riferimenti visivi</label><textarea id="f-stile" placeholder="es. Minimal, materiali naturali, illuminazione calda" data-track="nice"></textarea></div>
+      <div class="field full"><label for="f-comunicazione">Obiettivi di comunicazione</label><textarea id="f-comunicazione" placeholder="es. Lancio di un nuovo prodotto, anniversario aziendale, ingresso in un nuovo mercato" data-track="nice"></textarea></div>
+      <div class="field full">
+        <label for="f-stile">Indirizzo di stile e design, riferimenti visivi</label>
+        <textarea id="f-stile" placeholder="es. Minimal, materiali naturali, illuminazione calda" data-track="nice"></textarea>
+      </div>
     </div>
   </section>
 
   <section class="block">
     <div class="block-head">
       <span class="block-num">04</span>
-      <h2>Note raccolte in call</h2>
+      <h2>Note raccolte dal cliente</h2>
     </div>
     <div class="note-block">
       <div class="field full">
@@ -516,10 +677,6 @@
     <span class="autosave-status" id="autosaveStatus"></span>
   </div>
 
-  <footer class="doc-foot">
-    Progetto EVOLUTION | Riservato — uso interno · Bozza di lavoro, Progetto 4.1 — Standardizzazione brief e schede di commessa
-  </footer>
-
 </div>
 
 <script>
@@ -552,6 +709,9 @@ buildChecklistColumn(mustFields, checklistMust, 'reqIndex');
 buildChecklistColumn(niceFields, checklistNice, 'niceIndex');
 
 function isFilled(el){
+  if(el.dataset.reqGroup === 'stand'){
+    return Array.from(el.querySelectorAll('select')).every(s => s.value !== '');
+  }
   if(el.type === 'file') return el.files && el.files.length > 0;
   return !!(el.value && el.value.trim().length > 0);
 }
@@ -708,10 +868,10 @@ document.getElementById('btnCopy').addEventListener('click', ()=>{
   };
 
   const sections = [
-    ['ANAGRAFICA COMMESSA', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Metratura assegnata','Referente cliente','Account WES','Data raccolta brief','Progettista WES','PM WES']],
-    ['INFORMAZIONI OBBLIGATORIE', ['Prodotti da esporre','Obiettivi e funzione dello stand','Brand identity','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
+    ['ANAGRAFICA COMMESSA', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Metratura stand','Referente cliente','Account WES','Data raccolta brief','Data concordata per la presentazione delle proposta','Progettista WES','PM WES']],
+    ['INFORMAZIONI OBBLIGATORIE', ['Obiettivi e funzione dello stand','Brand identity','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
     ['APPROFONDIMENTI DESIDERATI', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Indirizzo di stile e design, riferimenti visivi']],
-    ['NOTE RACCOLTE IN CALL', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
+    ['NOTE RACCOLTE DAL CLIENTE', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
     ['DECISIONE DI PROGETTO', ['Decisione di progetto']]
   ];
 
@@ -722,6 +882,16 @@ document.getElementById('btnCopy').addEventListener('click', ()=>{
       if(l === 'Brand identity'){
         const n = document.getElementById('f-brand-files').files.length;
         out += `Brand identity — materiali caricati: ${n > 0 ? n + ' file' : 'nessuno'}\n`;
+        return;
+      }
+      if(l === 'Elementi richiesti per lo stand'){
+        out += `Elementi richiesti per lo stand:\n`;
+        document.querySelectorAll('.stand-element').forEach(row=>{
+          const name = row.querySelector('.stand-element-name').textContent.trim();
+          const val = row.querySelector('select').value || '—';
+          const note = row.querySelector('input[type="text"]').value;
+          out += `- ${name}: ${val}${note ? ' — ' + note : ''}\n`;
+        });
         return;
       }
       out += `${l}: ${get(l) || '—'}\n`;
