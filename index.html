@@ -722,7 +722,7 @@
             </select>
           </div>
           <label for="f-stand-appendimento-note" class="sr-only">Nota su Appendimento</label>
-          <input type="text" id="f-stand-appendimento-note" placeholder="Solo grafica? Retroilluminato? Con Videowall?">
+          <input type="text" id="f-stand-appendimento-note" placeholder="Richieste particolari?">
         </div>
 
         <div class="stand-element">
@@ -735,7 +735,7 @@
             </select>
           </div>
           <label for="f-stand-desk-reception-note" class="sr-only">Nota su Desk reception</label>
-          <input type="text" id="f-stand-desk-reception-note" placeholder="Lineare? Angolare? Richieste particolari?">
+          <input type="text" id="f-stand-desk-reception-note" placeholder="Richieste particolari?">
         </div>
 
         <div class="stand-element">
@@ -753,7 +753,7 @@
 
         <div class="stand-element">
           <div class="stand-element-head">
-            <label for="f-stand-lounge" class="stand-element-name">Lounge (spazio di accoglienza per clienti)</label>
+            <label for="f-stand-lounge" class="stand-element-name">Lounge (spazio di accoglienza per clienti con poltroncine/poltrone o divanetti)</label>
             <select id="f-stand-lounge" required aria-required="true">
               <option value="">— seleziona —</option>
               <option>Sì</option>
@@ -774,7 +774,7 @@
             </select>
           </div>
           <label for="f-stand-sedute-aperte-note" class="sr-only">Nota su Sedute in area aperta</label>
-          <input type="text" id="f-stand-sedute-aperte-note" placeholder="Per quante persone? Sedie o sgabelli alti? Tavoli rotondi o squadrati?">
+          <input type="text" id="f-stand-sedute-aperte-note" placeholder="Per quante persone? Preferenza sulle sedute (sedie o sgabelli alti)?">
         </div>
 
         <div class="stand-element">
@@ -787,7 +787,7 @@
             </select>
           </div>
           <label for="f-stand-bancone-bar-note" class="sr-only">Nota su Bancone bar</label>
-          <input type="text" id="f-stand-bancone-bar-note" placeholder="Per quante persone di servizio? Con sedute sul fronte?">
+          <input type="text" id="f-stand-bancone-bar-note" placeholder="Per quante persone di servizio? Con sedute sul fronte? Richieste particolari?">
         </div>
 
         <div class="stand-element">
@@ -831,6 +831,19 @@
 
         <div class="stand-element">
           <div class="stand-element-head">
+            <label for="f-stand-altri-spazi" class="stand-element-name">Altri spazi da inserire nello stand non menzionati sopra</label>
+            <select id="f-stand-altri-spazi" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-altri-spazi-note" class="sr-only">Nota su Altri spazi da inserire nello stand non menzionati sopra</label>
+          <input type="text" id="f-stand-altri-spazi-note" placeholder="Richieste particolari?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
             <label for="f-stand-grafica-wes" class="stand-element-name">Grafica a sviluppo WES</label>
             <select id="f-stand-grafica-wes" required aria-required="true">
               <option value="">— seleziona —</option>
@@ -867,6 +880,7 @@
     <div class="field-grid">
       <div class="field full"><label for="f-concorrenti">Concorrenti di riferimento in fiera</label><textarea id="f-concorrenti" placeholder="es. Fintech Solutions, DataCore Group" data-track="nice"></textarea></div>
       <div class="field full"><label for="f-comunicazione">Obiettivi di comunicazione</label><textarea id="f-comunicazione" placeholder="es. Lancio di un nuovo prodotto, anniversario aziendale, ingresso in un nuovo mercato" data-track="nice"></textarea></div>
+      <div class="field full"><label for="f-esperienze-precedenti">Esperienze precedenti</label><textarea id="f-esperienze-precedenti" placeholder="In caso il cliente abbia già partecipato a questa fiera, ci sono elementi dello stand che vuole mantenere o cambiare rispetto alle passate edizioni?" data-track="nice"></textarea></div>
       <div class="field full">
         <label for="f-stile">Indirizzo di stile e design, riferimenti visivi</label>
         <textarea id="f-stile" placeholder="es. Minimal, materiali naturali, illuminazione calda" data-track="nice"></textarea>
@@ -1142,7 +1156,7 @@ document.getElementById('btnCopy').addEventListener('click', ()=>{
   const sections = [
     ['ANAGRAFICA COMMESSA', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Metratura stand','Referente cliente','Account WES','Data raccolta brief','Data concordata per la presentazione delle proposta','Progettista WES','PM WES']],
     ['INFORMAZIONI OBBLIGATORIE', ['Obiettivi e funzione dello stand','Brand identity','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
-    ['APPROFONDIMENTI DESIDERATI', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Indirizzo di stile e design, riferimenti visivi']],
+    ['APPROFONDIMENTI DESIDERATI', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Esperienze precedenti','Indirizzo di stile e design, riferimenti visivi']],
     ['NOTE RACCOLTE DAL CLIENTE', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
     ['DECISIONE DI PROGETTO', ['Decisione di progetto']]
   ];
