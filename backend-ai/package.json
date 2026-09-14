@@ -1,0 +1,19 @@
+{
+  "name": "wes-brief-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servizio di precompilazione del Brief di commessa WES a partire da un documento cliente (PDF/Word).",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "express": "^4.21.2",
+    "mammoth": "^1.9.0"
+  }
+}

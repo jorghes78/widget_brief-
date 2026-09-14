@@ -1,0 +1,29 @@
+# Blueprint Render per il servizio di precompilazione AI del brief.
+# Va alla radice del repository (accanto a index.html), non dentro backend-ai/.
+# In alternativa si può creare il servizio a mano dal pannello Render:
+# vedi backend-ai/README.md.
+services:
+  - type: web
+    name: wes-brief-ai
+    runtime: node
+    plan: free
+    rootDir: backend-ai
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      # Valori segreti: si inseriscono a mano nel pannello Render, non qui.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CODICE_ACCESSO
+        sync: false
+      - key: MODELLO
+        value: claude-sonnet-5
+      - key: EFFORT
+        value: medium
+      - key: ORIGINI_CONSENTITE
+        value: https://jorghes78.github.io
+      - key: MAX_MB
+        value: "18"
+      - key: LIMITE_ORARIO
+        value: "40"
