@@ -277,7 +277,7 @@
     box-shadow:0 0 0 2px var(--teal-ring);
   }
   /* stato "campo compilato" */
-  input.filled, textarea.filled, select.filled{
+  input.filled:not([type="checkbox"]), textarea.filled, select.filled{
     border-color:var(--teal-filled-line);
     background-color:var(--teal-filled-bg);
   }
@@ -325,6 +325,47 @@
     text-wrap:pretty;
   }
 
+
+  /* ── Campi di spunta (conferme di raccolta materiali) ──────── */
+  .check-confirm{
+    display:flex;
+    align-items:flex-start;
+    gap:11px;
+    padding:12px 14px;
+    border:1px solid var(--line-field);
+    border-radius:var(--radius);
+    background:var(--paper);
+    cursor:pointer;
+    text-transform:none;
+    letter-spacing:normal;
+    transition:border-color 200ms ease, background-color 200ms ease;
+  }
+  .check-confirm:hover{border-color:rgba(8,9,11,0.34);}
+  .check-confirm.filled{
+    border-color:var(--teal-filled-line);
+    background-color:var(--teal-filled-bg);
+  }
+  .check-confirm input[type="checkbox"]{
+    width:16px;
+    height:16px;
+    flex:0 0 auto;
+    margin:1px 0 0;
+    padding:0;
+    accent-color:var(--teal);
+    cursor:pointer;
+  }
+  .check-confirm input[type="checkbox"]:focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:2px;
+  }
+  .check-confirm-txt{
+    font-size:12px;
+    font-weight:400;
+    line-height:1.5;
+    letter-spacing:.04em;
+    text-transform:none;
+    color:var(--ink);
+  }
   /* ── Pannelli ──────────────────────────────────────────────── */
   .note-block,
   .team-block,
@@ -616,6 +657,9 @@
       border-color:#dcdfde !important;
     }
     header.doc-head, section.block{break-inside:avoid;page-break-inside:avoid;}
+    .check-confirm input[type="checkbox"]{display:none !important;}
+    .check-confirm::before{content:'\2610';font-size:15px;line-height:1.2;color:#08090b;}
+    .check-confirm.filled::before{content:'\2611';}
   }
 </style>
 </head>
@@ -630,9 +674,638 @@
 
   <div class="gate">
     <div class="gate-label" id="gateLabel">Elementi obbligatori</div>
-    <div class="gate-track" role="progressbar" aria-labelledby="gateLabel" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div class="gate-fill" id="gateFill"></div></div>
-    <div class="gate-status" id="gateStatus" aria-live="polite" aria-atomic="true">0 di 6 — Progettazione non avviabile</div>
+    <div class="gate-track" role="progressbar" aria-labelledby="gateLabel" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><div class="gate-fill" id="gateFill"></div></div>
+    <div class="gate-status" id="gateStatus" aria-live="polite" aria-atomic="true">0 di 7 — Progettazione non avviabile</div>
   </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       INIZIO BLOCCO AI — Precompilazione da documento cliente
+       Tutto ciò che serve alla funzione (stile, markup e logica) sta fra
+       questo commento e quello di chiusura: per disattivarla basta cancellare
+       le righe comprese fra i due marcatori, il resto del widget non cambia.
+       Richiede il servizio backend-ai/ pubblicato su Render; se il servizio
+       non risponde il pannello segnala l'errore e il modulo resta usabile
+       normalmente a mano.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <style>
+    #pannelloAI{
+      margin-top:40px;
+      padding:24px 28px;
+      border:1px dashed var(--teal-filled-line);
+      background:var(--teal-filled-bg);
+    }
+    #pannelloAI.trascina{border-style:solid;border-color:var(--teal);background:rgba(26,114,114,0.12);}
+    .ai-titolo{
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:var(--teal);
+      margin-bottom:8px;
+    }
+    .ai-descrizione{
+      font-size:12px;
+      letter-spacing:.04em;
+      color:var(--ink-faint);
+      max-width:760px;
+      margin-bottom:20px;
+      text-wrap:pretty;
+    }
+    .ai-riga{display:flex;flex-wrap:wrap;align-items:center;gap:14px;}
+    .ai-riga input[type="file"]{flex:1 1 320px;min-width:0;background:var(--paper);}
+    #btnAnalizza{flex:none;}
+    #btnAnalizza[disabled]{opacity:.55;cursor:default;}
+    .ai-stato{
+      flex:1 1 100%;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.10em;
+      color:var(--ink-faint);
+      min-height:16px;
+    }
+    .ai-stato.errore{color:var(--stop);}
+    .ai-stato.ok{color:var(--go);}
+
+    /* campo precompilato dall'AI: da rileggere prima di considerarlo buono.
+       Il caso :focus è scritto a parte perché il contrassegno non deve
+       sostituire l'anello di focus, ma sommarsi a esso. */
+    input.da-ai, textarea.da-ai, select.da-ai{box-shadow:inset 3px 0 0 var(--orange);}
+    input.da-ai:focus, textarea.da-ai:focus, select.da-ai:focus{
+      box-shadow:0 0 0 2px var(--teal-ring), inset 3px 0 0 var(--orange);
+    }
+
+    /* ── Riepilogo ────────────────────────────────────────────────────── */
+    .ai-velo{
+      position:fixed;
+      inset:0;
+      z-index:50;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(8,9,11,0.55);
+    }
+    .ai-velo[hidden]{display:none;}
+    .ai-dialogo{
+      width:100%;
+      max-width:760px;
+      max-height:86vh;
+      overflow-y:auto;
+      background:var(--paper);
+      border-top:4px solid var(--teal);
+      padding:32px 36px 28px;
+      box-shadow:0 18px 48px rgba(8,9,11,0.28);
+    }
+    .ai-dialogo h3{
+      margin:0 0 6px;
+      font-size:20px;
+      font-weight:700;
+      line-height:1.15;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      color:var(--ink);
+    }
+    .ai-sintesi{
+      font-size:12px;
+      letter-spacing:.04em;
+      color:var(--ink-faint);
+      margin-bottom:24px;
+      text-wrap:pretty;
+    }
+    .ai-gruppo{margin-bottom:24px;}
+    .ai-gruppo-titolo{
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      padding-bottom:8px;
+      margin-bottom:12px;
+      border-bottom:1px solid var(--line-divider);
+    }
+    .ai-gruppo-titolo.manca{color:var(--stop);}
+    .ai-gruppo-titolo.fatto{color:var(--teal);}
+    .ai-gruppo-titolo.verifica{color:var(--orange-ink);}
+    .ai-voce{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:5px 0;
+      font-size:12px;
+      letter-spacing:.04em;
+      color:var(--ink-muted);
+    }
+    .ai-pallino{
+      flex:none;
+      width:7px;
+      height:7px;
+      margin-top:6px;
+      border-radius:50%;
+      background:var(--line-field);
+    }
+    .ai-pallino.manca{background:var(--stop);}
+    .ai-pallino.fatto{background:var(--go);}
+    .ai-pallino.verifica{background:var(--orange);}
+    .ai-voce .ai-dettaglio{display:block;color:var(--ink-ghost);font-size:11px;}
+    .ai-vuoto{font-size:12px;color:var(--ink-ghost);letter-spacing:.04em;}
+    /* su elenchi lunghi il dialogo scorre: i pulsanti restano agganciati in
+       fondo, così non serve arrivare in fondo allo scroll per chiudere */
+    .ai-azioni{
+      position:sticky;
+      bottom:-28px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:28px;
+      padding:20px 0 28px;
+      background:var(--paper);
+      border-top:1px solid var(--line-divider);
+    }
+    @media(max-width:640px){
+      #pannelloAI{padding:20px;}
+      .ai-dialogo{padding:24px 20px 20px;}
+    }
+    @media print{
+      #pannelloAI, .ai-velo{display:none !important;}
+      input.da-ai, textarea.da-ai, select.da-ai{box-shadow:none !important;}
+    }
+  </style>
+
+  <div id="pannelloAI" role="region" aria-labelledby="aiTitolo">
+    <div class="ai-titolo" id="aiTitolo">Precompilazione da documento cliente</div>
+    <div class="ai-descrizione">
+      Se il cliente ha già mandato un brief in Word o PDF, caricalo qui: i campi riconosciuti vengono
+      compilati in automatico e un riepilogo indica che cosa manca ancora fra le informazioni obbligatorie.
+      È un punto di partenza, non una compilazione definitiva — i campi precompilati restano segnati in
+      arancione finché non li rileggi.
+    </div>
+    <div class="ai-riga">
+      <label for="f-ai-documento" class="sr-only">Documento di brief del cliente</label>
+      <input type="file" id="f-ai-documento" accept=".pdf,.docx,.txt,.md,.csv,.png,.jpg,.jpeg,.webp">
+      <button type="button" id="btnAnalizza" disabled>Analizza documento</button>
+      <div class="ai-stato" id="aiStato" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="ai-velo" id="aiVelo" hidden>
+    <div class="ai-dialogo" role="dialog" aria-modal="true" aria-labelledby="aiDialogoTitolo" tabindex="-1" id="aiDialogo">
+      <h3 id="aiDialogoTitolo">Esito della precompilazione</h3>
+      <div class="ai-sintesi" id="aiSintesi"></div>
+      <div id="aiCorpo"></div>
+      <div class="ai-azioni">
+        <button type="button" id="btnChiudiRiepilogo">Ho capito, continuo</button>
+        <button type="button" class="secondary" id="btnAnnullaAI">Annulla precompilazione</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    // URL del servizio pubblicato su Render. Si può sovrascrivere al volo da
+    // console (utile per provare una copia locale) con:
+    //   localStorage.setItem('wes-ai-endpoint', 'http://localhost:3000')
+    const ENDPOINT_PREDEFINITO = 'https://wes-brief-ai.onrender.com';
+    const CHIAVE_CODICE = 'wes-ai-codice';
+    const ATTESA_MASSIMA = 180000;
+
+    // Campi che il documento del cliente non può contenere: assegnazioni
+    // interne WES, decisione di progetto, data di compilazione del brief e
+    // conferme di raccolta materiali (le spunta chi raccoglie il brief).
+    const CAMPI_ESCLUSI = new Set([
+      'f-account', 'f-progettista', 'f-pm', 'f-decisione', 'f-databrief', 'f-ai-documento',
+      'f-brand-check', 'f-doc-fiera-check'
+    ]);
+
+    const endpoint = () =>
+      (localStorage.getItem('wes-ai-endpoint') || ENDPOINT_PREDEFINITO).replace(/\/+$/, '');
+
+    // ── Lettura della struttura del modulo ─────────────────────────────────
+    // I campi non sono elencati qui: si leggono dal DOM ogni volta. Così un
+    // campo aggiunto domani all'HTML entra nell'estrazione da solo, senza
+    // dover ricordarsi di aggiornare anche il servizio.
+    function etichettaDi(el){
+      const esplicita = el.id && document.querySelector('label[for="' + CSS.escape(el.id) + '"]');
+      const vicina = !esplicita && el.closest('.field') && el.closest('.field').querySelector('label');
+      const lbl = esplicita || vicina;
+      return lbl ? lbl.textContent.replace('*', '').replace(/\s+/g, ' ').trim() : '';
+    }
+
+    function costruisciManifest(){
+      const campi = [];
+      document.querySelectorAll('.shell input, .shell textarea, .shell select').forEach(function(el){
+        if(!el.id || el.type === 'file' || CAMPI_ESCLUSI.has(el.id)) return;
+        if(el.closest('#pannelloAI')) return;
+
+        const etichetta = etichettaDi(el);
+        if(!etichetta) return;
+
+        const sezione = el.closest('section.block');
+        const contenitoreGruppo = el.closest('.stand-elements, .team-block');
+        const etichettaGruppo = contenitoreGruppo
+          ? contenitoreGruppo.querySelector(':scope > label, :scope > .team-block-label')
+          : null;
+
+        let tipo = 'text';
+        let opzioni = [];
+        if(el.tagName === 'SELECT'){
+          tipo = 'select';
+          opzioni = Array.from(el.options).map(function(o){ return o.value; }).filter(Boolean);
+        } else if(el.tagName === 'TEXTAREA'){
+          tipo = 'textarea';
+        } else if(el.type === 'date'){
+          tipo = 'date';
+        }
+
+        campi.push({
+          id: el.id,
+          etichetta: etichetta,
+          tipo: tipo,
+          suggerimento: el.placeholder || '',
+          sezione: sezione && sezione.querySelector('h2') ? sezione.querySelector('h2').textContent.trim() : '',
+          gruppo: etichettaGruppo ? etichettaGruppo.textContent.replace('*', '').trim() : '',
+          obbligatorio: el.matches('[data-req="1"]') ||
+                        (el.tagName === 'SELECT' && !!el.closest('[data-req="1"]')),
+          opzioni: opzioni
+        });
+      });
+      return campi;
+    }
+
+    // ── Stato dei campi obbligatori ────────────────────────────────────────
+    function mancantiObbligatori(){
+      const mancanti = [];
+      document.querySelectorAll('[data-req="1"]').forEach(function(el){
+        if(el.dataset.reqGroup === 'stand'){
+          const senzaRisposta = Array.from(el.querySelectorAll('select'))
+            .filter(function(s){ return s.value === ''; })
+            .map(function(s){ return etichettaDi(s); });
+          if(senzaRisposta.length){
+            mancanti.push({
+              etichetta: el.querySelector(':scope > label').textContent.replace('*', '').trim(),
+              dettaglio: 'Senza risposta: ' + senzaRisposta.join(', ')
+            });
+          }
+          return;
+        }
+        const compilato = el.type === 'checkbox'
+          ? el.checked
+          : el.type === 'file'
+            ? !!(el.files && el.files.length)
+            : !!(el.value && el.value.trim());
+        if(!compilato){
+          mancanti.push({
+            etichetta: etichettaDi(el),
+            dettaglio: el.type === 'file' ? 'Da caricare a mano: i file non si estraggono dal documento.'
+                     : el.type === 'checkbox' ? 'Da spuntare a mano: conferma la raccolta dei materiali.'
+                     : ''
+          });
+        }
+      });
+      return mancanti;
+    }
+
+    // ── Applicazione dei valori estratti ───────────────────────────────────
+    let istantanea = null;        // stato precedente, per poter annullare
+    let inApplicazione = false;   // vedi il listener che toglie il contrassegno
+
+    function applica(valori, dedotti){
+      const insiemeDedotti = new Set(dedotti || []);
+      const esito = { compilati: [], daVerificare: [], conservati: [], ignorati: 0 };
+
+      istantanea = new Map();
+      inApplicazione = true;
+
+      Object.keys(valori || {}).forEach(function(id){
+        const el = document.getElementById(id);
+        if(!el || CAMPI_ESCLUSI.has(id)) return;
+
+        const grezzo = valori[id];
+        if(grezzo === null || grezzo === undefined || grezzo === 'non_indicato') return;
+        const valore = String(grezzo).trim();
+        if(!valore) return;
+
+        // Quello che il commerciale ha già scritto non si tocca mai.
+        if(el.value && el.value.trim()){
+          esito.conservati.push(etichettaDi(el));
+          return;
+        }
+
+        if(el.tagName === 'SELECT'){
+          const opzione = Array.from(el.options).find(function(o){ return o.value === valore; });
+          if(!opzione){ esito.ignorati++; return; }
+        } else if(el.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(valore)){
+          esito.ignorati++;
+          return;
+        }
+
+        istantanea.set(id, el.value);
+        el.value = valore;
+        el.classList.add('da-ai');
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+
+        const voce = { etichetta: etichettaDi(el), valore: valore };
+        if(insiemeDedotti.has(id)) esito.daVerificare.push(voce);
+        else esito.compilati.push(voce);
+      });
+
+      inApplicazione = false;
+      return esito;
+    }
+
+    function annullaApplicazione(){
+      if(!istantanea) return;
+      istantanea.forEach(function(precedente, id){
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.value = precedente;
+        el.classList.remove('da-ai');
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      istantanea = null;
+    }
+
+    // ── Riepilogo ──────────────────────────────────────────────────────────
+    const velo = document.getElementById('aiVelo');
+    const dialogo = document.getElementById('aiDialogo');
+    const corpo = document.getElementById('aiCorpo');
+    let focusPrecedente = null;
+
+    function gruppo(titolo, classe, voci, testoSeVuoto){
+      const box = document.createElement('div');
+      box.className = 'ai-gruppo';
+
+      const intestazione = document.createElement('div');
+      intestazione.className = 'ai-gruppo-titolo ' + classe;
+      intestazione.textContent = titolo + (voci.length ? ' (' + voci.length + ')' : '');
+      box.appendChild(intestazione);
+
+      if(!voci.length){
+        const vuoto = document.createElement('div');
+        vuoto.className = 'ai-vuoto';
+        vuoto.textContent = testoSeVuoto;
+        box.appendChild(vuoto);
+        return box;
+      }
+
+      voci.forEach(function(v){
+        const riga = document.createElement('div');
+        riga.className = 'ai-voce';
+
+        const pallino = document.createElement('span');
+        pallino.className = 'ai-pallino ' + classe;
+        pallino.setAttribute('aria-hidden', 'true');
+        riga.appendChild(pallino);
+
+        const testo = document.createElement('span');
+        testo.textContent = v.etichetta;
+        if(v.dettaglio || v.valore){
+          const dettaglio = document.createElement('span');
+          dettaglio.className = 'ai-dettaglio';
+          dettaglio.textContent = v.dettaglio || v.valore;
+          testo.appendChild(dettaglio);
+        }
+        riga.appendChild(testo);
+        box.appendChild(riga);
+      });
+      return box;
+    }
+
+    function mostraRiepilogo(esito, sintesi){
+      const mancanti = mancantiObbligatori();
+      document.getElementById('aiSintesi').textContent = sintesi || '';
+      corpo.innerHTML = '';
+
+      corpo.appendChild(gruppo(
+        'Informazioni obbligatorie ancora da raccogliere', 'manca', mancanti,
+        'Nessuna: tutti i campi obbligatori risultano compilati.'
+      ));
+      corpo.appendChild(gruppo(
+        'Da verificare — valori dedotti, non scritti nel documento', 'verifica', esito.daVerificare,
+        'Nessuno: tutto ciò che è stato compilato era scritto esplicitamente.'
+      ));
+      corpo.appendChild(gruppo(
+        'Compilati dal documento', 'fatto', esito.compilati,
+        'Nessun campo riconosciuto nel documento.'
+      ));
+
+      if(esito.conservati.length){
+        corpo.appendChild(gruppo(
+          'Lasciati invariati perché già compilati da te', 'fatto',
+          esito.conservati.map(function(e){ return { etichetta: e }; }), ''
+        ));
+      }
+
+      focusPrecedente = document.activeElement;
+      velo.hidden = false;
+      dialogo.focus();
+    }
+
+    function chiudiRiepilogo(){
+      velo.hidden = true;
+      if(focusPrecedente && focusPrecedente.focus) focusPrecedente.focus();
+    }
+
+    document.getElementById('btnChiudiRiepilogo').addEventListener('click', chiudiRiepilogo);
+    document.getElementById('btnAnnullaAI').addEventListener('click', function(){
+      annullaApplicazione();
+      chiudiRiepilogo();
+      stato('Precompilazione annullata, i campi sono tornati come prima.', '');
+    });
+    velo.addEventListener('click', function(e){ if(e.target === velo) chiudiRiepilogo(); });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && !velo.hidden) chiudiRiepilogo();
+    });
+
+    // ── Pannello ───────────────────────────────────────────────────────────
+    const campoFile = document.getElementById('f-ai-documento');
+    const bottone = document.getElementById('btnAnalizza');
+    const rigaStato = document.getElementById('aiStato');
+    const pannello = document.getElementById('pannelloAI');
+    let inCorso = false;
+
+    function stato(messaggio, classe){
+      rigaStato.textContent = messaggio;
+      rigaStato.className = 'ai-stato' + (classe ? ' ' + classe : '');
+    }
+
+    function aggiornaBottone(){
+      bottone.disabled = inCorso || !campoFile.files || campoFile.files.length === 0;
+    }
+
+    // Sul piano gratuito di Render l'istanza si sospende dopo un po' di
+    // inattività: la si sveglia appena l'utente sceglie il file, così quando
+    // clicca "Analizza" il servizio è già in piedi.
+    let svegliato = false;
+    function svegliaServizio(){
+      if(svegliato) return;
+      svegliato = true;
+      fetch(endpoint() + '/health', { method: 'GET' }).catch(function(){});
+    }
+
+    campoFile.addEventListener('change', function(){
+      aggiornaBottone();
+      if(campoFile.files && campoFile.files.length){
+        svegliaServizio();
+        stato('', '');
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(function(evento){
+      pannello.addEventListener(evento, function(e){
+        e.preventDefault();
+        pannello.classList.add('trascina');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function(evento){
+      pannello.addEventListener(evento, function(e){
+        e.preventDefault();
+        if(evento === 'dragleave' && pannello.contains(e.relatedTarget)) return;
+        pannello.classList.remove('trascina');
+      });
+    });
+    pannello.addEventListener('drop', function(e){
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if(!file) return;
+      const trasferimento = new DataTransfer();
+      trasferimento.items.add(file);
+      campoFile.files = trasferimento.files;
+      campoFile.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    function leggiBase64(file){
+      return new Promise(function(risolvi, rifiuta){
+        const lettore = new FileReader();
+        lettore.onerror = function(){ rifiuta(new Error('Non sono riuscito a leggere il file.')); };
+        lettore.onload = function(){
+          const risultato = String(lettore.result);
+          risolvi(risultato.slice(risultato.indexOf(',') + 1));
+        };
+        lettore.readAsDataURL(file);
+      });
+    }
+
+    async function chiama(corpoRichiesta){
+      const controllo = new AbortController();
+      const scadenza = setTimeout(function(){ controllo.abort(); }, ATTESA_MASSIMA);
+      try{
+        const intestazioni = { 'Content-Type': 'application/json' };
+        const codice = localStorage.getItem(CHIAVE_CODICE);
+        if(codice) intestazioni['X-Codice-Accesso'] = codice;
+
+        const risposta = await fetch(endpoint() + '/api/estrai', {
+          method: 'POST',
+          headers: intestazioni,
+          body: JSON.stringify(corpoRichiesta),
+          signal: controllo.signal
+        });
+
+        let dati = {};
+        try{ dati = await risposta.json(); } catch(e){ /* risposta non JSON */ }
+        return { ok: risposta.ok, stato: risposta.status, dati: dati };
+      } finally {
+        clearTimeout(scadenza);
+      }
+    }
+
+    bottone.addEventListener('click', async function(){
+      const file = campoFile.files && campoFile.files[0];
+      if(!file || inCorso) return;
+
+      inCorso = true;
+      aggiornaBottone();
+
+      const avvio = Date.now();
+      const battito = setInterval(function(){
+        const secondi = Math.round((Date.now() - avvio) / 1000);
+        stato(secondi < 15
+          ? 'Analisi del documento in corso… ' + secondi + 's'
+          : 'Analisi in corso… ' + secondi + 's — se è la prima richiesta della giornata il servizio si sta riavviando, può volerci un minuto.',
+          '');
+      }, 1000);
+      stato('Analisi del documento in corso…', '');
+
+      try{
+        const base64 = await leggiBase64(file);
+        const corpoRichiesta = { nomeFile: file.name, base64: base64, manifest: costruisciManifest() };
+
+        let esitoChiamata = await chiama(corpoRichiesta);
+
+        // Primo utilizzo su questa postazione: il servizio chiede il codice
+        // concordato, che poi resta memorizzato nel browser.
+        if(esitoChiamata.stato === 401 && esitoChiamata.dati && esitoChiamata.dati.codice === 'accesso'){
+          const inserito = prompt('Codice di accesso al servizio di precompilazione:');
+          if(!inserito){
+            stato('Analisi annullata: serve il codice di accesso.', 'errore');
+            return;
+          }
+          localStorage.setItem(CHIAVE_CODICE, inserito.trim());
+          esitoChiamata = await chiama(corpoRichiesta);
+          if(esitoChiamata.stato === 401) localStorage.removeItem(CHIAVE_CODICE);
+        }
+
+        if(!esitoChiamata.ok){
+          stato((esitoChiamata.dati && esitoChiamata.dati.errore) ||
+                'Il servizio ha risposto con un errore (' + esitoChiamata.stato + ').', 'errore');
+          return;
+        }
+
+        const risultato = esitoChiamata.dati;
+        const esito = applica(risultato.campi, risultato.dedotti);
+        const totale = esito.compilati.length + esito.daVerificare.length;
+        stato(totale
+          ? totale + (totale === 1 ? ' campo compilato dal documento.' : ' campi compilati dal documento.')
+          : 'Nessun campo riconosciuto in questo documento.', totale ? 'ok' : '');
+        mostraRiepilogo(esito, risultato.sintesi);
+
+      } catch(err){
+        stato(err && err.name === 'AbortError'
+          ? 'Il servizio non ha risposto entro tre minuti. Riprova, oppure compila a mano.'
+          : 'Non sono riuscito a contattare il servizio di precompilazione. Controlla la connessione: il resto del modulo funziona comunque.',
+          'errore');
+      } finally {
+        clearInterval(battito);
+        inCorso = false;
+        aggiornaBottone();
+      }
+    });
+
+    // Il contrassegno arancione sparisce non appena il campo viene rivisto.
+    // Gli eventi che applica() emette per aggiornare il gate non contano come
+    // rilettura: senza questa guardia il contrassegno sparirebbe subito dopo
+    // essere stato messo.
+    document.addEventListener('input', function(e){
+      if(inApplicazione) return;
+      if(e.target.classList && e.target.classList.contains('da-ai')) e.target.classList.remove('da-ai');
+    }, true);
+
+    // "Svuota campi" azzera i valori senza emettere eventi: dopo il suo
+    // gestore si ripuliscono i contrassegni rimasti sui campi ormai vuoti.
+    function agganciaReset(){
+      const bottoneReset = document.getElementById('btnReset');
+      if(!bottoneReset) return;
+      bottoneReset.addEventListener('click', function(){
+        setTimeout(function(){
+          document.querySelectorAll('.da-ai').forEach(function(el){
+            if(!el.value || !el.value.trim()) el.classList.remove('da-ai');
+          });
+          if(!document.querySelector('.da-ai')) istantanea = null;
+        }, 0);
+      });
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', agganciaReset);
+    } else {
+      agganciaReset();
+    }
+
+    aggiornaBottone();
+  })();
+  </script>
+  <!-- ═══ FINE BLOCCO AI — Precompilazione da documento cliente ═══════════ -->
 
   <section class="block">
     <div class="block-head">
@@ -864,9 +1537,20 @@
         <textarea id="f-obiettivi" placeholder="Cosa deve accadere nello stand (es. eventi, presentazioni, conferenze stampa, etc.)?" data-req="1" data-track="must" required aria-required="true"></textarea>
       </div>
       <div class="field full">
-        <label for="f-brand-files">Brand identity <span class="req" aria-hidden="true">*</span></label>
+        <label id="lbl-brand-check">Brand identity <span class="req" aria-hidden="true">*</span></label>
         <div class="file-hint">Materiali forniti dal cliente: loghi, palette colori, presentazione aziendale, stand precedenti, foto da usare in grafica, moodboard, etc.</div>
-        <input type="file" id="f-brand-files" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.svg,.ai,.eps" data-req="1" data-track="must" required aria-required="true">
+        <label class="check-confirm">
+          <input type="checkbox" id="f-brand-check" data-req="1" data-track="must" required aria-required="true" aria-labelledby="lbl-brand-check txt-brand-check">
+          <span class="check-confirm-txt" id="txt-brand-check">Materiali di brand identity raccolti dal cliente e archiviati nella cartella di progetto</span>
+        </label>
+      </div>
+      <div class="field full">
+        <label id="lbl-doc-fiera-check">Documentazione fieristica <span class="req" aria-hidden="true">*</span></label>
+        <div class="file-hint">Piantina dello stand ed eventuali documenti già a disposizione del cliente: regolamento ente fiera, regolamento espositori, credenziali di accesso al portale.</div>
+        <label class="check-confirm">
+          <input type="checkbox" id="f-doc-fiera-check" data-req="1" data-track="must" required aria-required="true" aria-labelledby="lbl-doc-fiera-check txt-doc-fiera-check">
+          <span class="check-confirm-txt" id="txt-doc-fiera-check">Documentazione fieristica raccolta dal cliente e archiviata nella cartella di progetto</span>
+        </label>
       </div>
     </div>
   </section>
@@ -936,7 +1620,6 @@
 
   <div class="actions">
     <button id="btnCopy">Copia sintesi testuale</button>
-    <button id="btnDownloadFiles">Scarica materiali Brand identity</button>
     <button id="btnPrint">Stampa / PDF</button>
     <button class="secondary" id="btnReset">Svuota campi</button>
     <span class="toast" id="toast">Copiato negli appunti</span>
@@ -957,6 +1640,7 @@ const decisionSelect = document.getElementById('f-decisione');
 
 // collegamento diretto campo <-> riga checklist tramite indice numerico,
 // invece di far combaciare il testo delle etichette (più fragile)
+document.querySelector('.gate-track').setAttribute('aria-valuemax', mustFields.length);
 mustFields.forEach((f, i) => { f.dataset.reqIndex = i; });
 niceFields.forEach((f, i) => { f.dataset.niceIndex = i; });
 
@@ -975,6 +1659,7 @@ buildChecklistColumn(mustFields, checklistMust, 'reqIndex');
 buildChecklistColumn(niceFields, checklistNice, 'niceIndex');
 
 function isFilled(el){
+  if(el.type === 'checkbox') return el.checked;
   if(el.dataset.reqGroup === 'stand'){
     return Array.from(el.querySelectorAll('select')).every(s => s.value !== '');
   }
@@ -996,12 +1681,19 @@ function refreshColumn(fields, container, dataAttr){
 }
 
 function markFilled(){
-  const done = el => el.type === 'file'
-    ? !!(el.files && el.files.length > 0)
-    : !!(el.value && el.value.trim().length > 0);
+  const done = el => el.type === 'checkbox'
+    ? el.checked
+    : el.type === 'file'
+      ? !!(el.files && el.files.length > 0)
+      : !!(el.value && el.value.trim().length > 0);
   document.querySelectorAll('[data-track], #f-elementi-group select').forEach(el=>{
     if(!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
     el.classList.toggle('filled', done(el));
+  });
+  // sulle caselle di spunta l'evidenza va sul riquadro, non sul quadratino
+  document.querySelectorAll('.check-confirm').forEach(box=>{
+    const cb = box.querySelector('input[type="checkbox"]');
+    box.classList.toggle('filled', !!(cb && cb.checked));
   });
 }
 
@@ -1049,9 +1741,7 @@ refresh();
 updateDecisionPanel();
 
 // salvataggio automatico locale (localStorage), per non perdere il lavoro
-// in caso di chiusura accidentale, crash o interruzione: i file caricati
-// (Brand identity) non sono inclusi, per limite del browser non sono
-// riassegnabili a un input file via script — vanno ricaricati manualmente
+// in caso di chiusura accidentale, crash o interruzione
 const AUTOSAVE_KEY = 'wes-brief-draft-v1';
 const autosaveStatus = document.getElementById('autosaveStatus');
 
@@ -1059,7 +1749,7 @@ function collectDraftData(){
   const data = {};
   document.querySelectorAll('input, textarea, select').forEach(el=>{
     if(el.type === 'file' || !el.id) return;
-    data[el.id] = el.value;
+    data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
   });
   return data;
 }
@@ -1086,13 +1776,15 @@ function restoreDraftIfPresent(){
   let parsed;
   try{ parsed = JSON.parse(raw); } catch(e){ return; }
   if(!parsed || !parsed.data) return;
-  const hasContent = Object.values(parsed.data).some(v => v && v.trim && v.trim().length > 0);
+  const hasContent = Object.values(parsed.data).some(v => v === true || (v && v.trim && v.trim().length > 0));
   if(!hasContent) return;
   const when = new Date(parsed.savedAt).toLocaleString('it-IT');
-  if(!confirm(`È stata trovata una bozza salvata automaticamente del ${when}. Vuoi ripristinarla?\n\n(I file caricati in Brand identity non vengono salvati automaticamente e vanno ricaricati manualmente.)`)) return;
+  if(!confirm(`È stata trovata una bozza salvata automaticamente del ${when}. Vuoi ripristinarla?`)) return;
   Object.entries(parsed.data).forEach(([id, value])=>{
     const el = document.getElementById(id);
-    if(el) el.value = value;
+    if(!el) return;
+    if(el.type === 'checkbox') el.checked = !!value;
+    else el.value = value;
   });
   refresh();
   updateDecisionPanel();
@@ -1106,29 +1798,12 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
   if(!confirm('Vuoi svuotare tutti i campi? L\'operazione non è reversibile.')) return;
   document.querySelectorAll('input, textarea, select').forEach(el=>{
     if(el.tagName === 'SELECT') el.selectedIndex = 0;
+    else if(el.type === 'checkbox') el.checked = false;
     else el.value = '';
   });
   refresh();
   updateDecisionPanel();
   clearDraft();
-});
-
-document.getElementById('btnDownloadFiles').addEventListener('click', ()=>{
-  const files = document.getElementById('f-brand-files').files;
-  if(!files || files.length === 0){
-    alert('Nessun file caricato per Brand identity.');
-    return;
-  }
-  Array.from(files).forEach(file=>{
-    const url = URL.createObjectURL(file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
 });
 
 document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
@@ -1150,12 +1825,14 @@ document.getElementById('btnCopy').addEventListener('click', ()=>{
     });
     if(!field) return '';
     const input = field.querySelector('input,textarea,select');
-    return input ? input.value : '';
+    if(!input) return '';
+    if(input.type === 'checkbox') return input.checked ? 'Sì — raccolta confermata' : 'No — da richiedere al cliente';
+    return input.value;
   };
 
   const sections = [
     ['ANAGRAFICA COMMESSA', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Metratura stand','Referente cliente','Account WES','Data raccolta brief','Data concordata per la presentazione delle proposta','Progettista WES','PM WES']],
-    ['INFORMAZIONI OBBLIGATORIE', ['Obiettivi e funzione dello stand','Brand identity','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
+    ['INFORMAZIONI OBBLIGATORIE', ['Obiettivi e funzione dello stand','Brand identity','Documentazione fieristica','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
     ['APPROFONDIMENTI DESIDERATI', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Esperienze precedenti','Indirizzo di stile e design, riferimenti visivi']],
     ['NOTE RACCOLTE DAL CLIENTE', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
     ['DECISIONE DI PROGETTO', ['Decisione di progetto']]
@@ -1165,11 +1842,6 @@ document.getElementById('btnCopy').addEventListener('click', ()=>{
   sections.forEach(([title, labels])=>{
     out += `\n${title}\n`;
     labels.forEach(l=>{
-      if(l === 'Brand identity'){
-        const n = document.getElementById('f-brand-files').files.length;
-        out += `Brand identity — materiali caricati: ${n > 0 ? n + ' file' : 'nessuno'}\n`;
-        return;
-      }
       if(l === 'Elementi richiesti per lo stand'){
         out += `Elementi richiesti per lo stand:\n`;
         document.querySelectorAll('.stand-element').forEach(row=>{
