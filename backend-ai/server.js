@@ -84,7 +84,7 @@ Regole non negoziabili:
 
 1. Estrai soltanto ciò che il documento dice. Non inventare, non completare con quello che sarebbe "plausibile" per una fiera, non usare conoscenze tue sul cliente, sul settore o sulla manifestazione.
 
-2. Se un'informazione non c'è, lascia il campo a null. Un campo vuoto è un risultato corretto e utile: dice al commerciale cosa deve ancora chiedere al cliente. Un campo inventato è un danno, perché da quel momento in poi nessuno lo verificherà più.
+2. Se un'informazione non c'è, lascia il campo vuoto — stringa vuota "" per i campi di testo, null per le date. Un campo vuoto è un risultato corretto e utile: dice al commerciale cosa deve ancora chiedere al cliente. Un campo inventato è un danno, perché da quel momento in poi nessuno lo verificherà più.
 
 3. L'assenza non è un no. Nei campi con risposta Sì/No, rispondi "No" solo se il documento esclude esplicitamente quell'elemento; se semplicemente non ne parla, rispondi "${NON_INDICATO}".
 

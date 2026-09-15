@@ -88,14 +88,27 @@ function descrizioneCampo(campo) {
       `altrimenti "${NON_INDICATO}".`
     );
   } else {
-    parti.push('Testo libero in italiano, oppure null se il documento non ne parla.');
+    parti.push('Testo libero in italiano. Se il documento non ne parla, restituisci una stringa vuota "".');
   }
   return parti.join(' ');
 }
 
+// Le uscite strutturate accettano al massimo 16 parametri con tipo unione
+// (anyOf o type in forma di array): oltre quella soglia l'API risponde 400.
+// Il margine tiene conto di eventuali campi nuovi aggiunti al widget.
+const MAX_UNIONI = 14;
+
 /** Schema JSON passato a output_config.format per vincolare la risposta. */
 export function costruisciSchema(campi) {
   const proprieta = {};
+
+  // Le date sono le uniche a meritare un'unione: dichiarando format 'date' il
+  // vincolo YYYY-MM-DD diventa strutturale, e il ramo null dà al modello un
+  // modo legittimo di dire "il documento non contiene una data completa".
+  // Se un domani le date fossero troppe si rinuncia al formato per tutte,
+  // piuttosto che superare la soglia e far fallire l'intera richiesta.
+  const dateConFormato =
+    campi.filter((c) => c.tipo === 'date' && !c.opzioni.length).length <= MAX_UNIONI;
 
   for (const campo of campi) {
     if (campo.opzioni.length) {
@@ -104,17 +117,17 @@ export function costruisciSchema(campi) {
         enum: [...campo.opzioni, NON_INDICATO],
         description: descrizioneCampo(campo)
       };
-    } else {
-      // I campi facoltativi devono poter essere null. La forma unione
-      // { type: ['string','null'] } NON è accettata dalle uscite strutturate:
-      // va scritta con anyOf, altrimenti l'API risponde 400.
-      // Sulle date si dichiara anche il formato, così il vincolo YYYY-MM-DD
-      // è strutturale e non affidato alla sola istruzione testuale.
-      const tipoStringa = campo.tipo === 'date'
-        ? { type: 'string', format: 'date' }
-        : { type: 'string' };
+    } else if (campo.tipo === 'date' && dateConFormato) {
       proprieta[campo.id] = {
-        anyOf: [tipoStringa, { type: 'null' }],
+        anyOf: [{ type: 'string', format: 'date' }, { type: 'null' }],
+        description: descrizioneCampo(campo)
+      };
+    } else {
+      // Niente unione per il testo libero: l'assenza si esprime con la stringa
+      // vuota, che il widget scarta esattamente come scarterebbe un null.
+      // Così lo schema regge anche se il modulo cresce di decine di campi.
+      proprieta[campo.id] = {
+        type: 'string',
         description: descrizioneCampo(campo)
       };
     }
