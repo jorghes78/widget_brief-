@@ -105,8 +105,16 @@ export function costruisciSchema(campi) {
         description: descrizioneCampo(campo)
       };
     } else {
+      // I campi facoltativi devono poter essere null. La forma unione
+      // { type: ['string','null'] } NON è accettata dalle uscite strutturate:
+      // va scritta con anyOf, altrimenti l'API risponde 400.
+      // Sulle date si dichiara anche il formato, così il vincolo YYYY-MM-DD
+      // è strutturale e non affidato alla sola istruzione testuale.
+      const tipoStringa = campo.tipo === 'date'
+        ? { type: 'string', format: 'date' }
+        : { type: 'string' };
       proprieta[campo.id] = {
-        type: ['string', 'null'],
+        anyOf: [tipoStringa, { type: 'null' }],
         description: descrizioneCampo(campo)
       };
     }

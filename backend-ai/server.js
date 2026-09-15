@@ -213,7 +213,13 @@ app.post('/api/estrai', async (req, res) => {
     }
     if (err instanceof Anthropic.APIError) {
       console.error('[estrai] API:', err.status, err.message);
-      return res.status(502).json({ errore: `Il servizio AI ha restituito un errore (${err.status}).` });
+      // Il messaggio dell'API viene riportato al chiamante: è uno strumento
+      // interno e senza quel dettaglio ogni diagnosi richiede di andare a
+      // leggere i log del servizio. Non contiene dati del cliente.
+      return res.status(502).json({
+        errore: `Il servizio AI ha restituito un errore (${err.status}).`,
+        dettaglio: String(err.message || '').slice(0, 500)
+      });
     }
     console.error('[estrai] imprevisto:', err);
     res.status(500).json({ errore: err.message || "Errore imprevisto durante l'analisi." });
