@@ -265,6 +265,8 @@
     transition:border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
   }
   textarea{min-height:68px;line-height:1.6;resize:vertical;}
+  /* Ricalco statico del valore di un campo, usato solo in stampa */
+  .print-value{display:none;}
   select{
     appearance:none;
     -webkit-appearance:none;
@@ -655,7 +657,25 @@
       box-shadow:none !important;
     }
     select{background-image:none !important;}
-    textarea{min-height:0 !important;resize:none !important;overflow:visible !important;}
+    /* Un campo di una riga, in stampa, taglia il testo che eccede la sua
+       larghezza: quel testo non finisce nemmeno nel PDF, si perde. Ogni campo
+       compilato viene quindi ricalcato in un blocco statico che va a capo. */
+    input.print-sostituito, textarea.print-sostituito{display:none !important;}
+    .print-value{
+      display:block;
+      width:100%;
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+      font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+      font-size:13px;
+      letter-spacing:.04em;
+      line-height:1.6;
+      color:#08090b;
+      padding:11px 14px;
+      border:1px solid #c4c8c7;
+      border-radius:var(--radius);
+      background:#ffffff;
+    }
     .note-block, .team-block, .stand-elements, .checklist,
     section.block.decision-panel{
       box-shadow:none !important;
@@ -1638,6 +1658,7 @@
   <div class="actions">
     <button id="btnCopy">Copia sintesi testuale</button>
     <button id="btnPrint">Stampa / PDF</button>
+    <button id="btnWord">Scarica Word</button>
     <button class="secondary" id="btnReset">Svuota campi</button>
     <span class="toast" id="toast">Copiato negli appunti</span>
     <span class="autosave-status" id="autosaveStatus"></span>
@@ -1825,55 +1846,364 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
 
 document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
 
-// in stampa le textarea non scrollano: si espandono all'altezza del contenuto
-// e tornano alla dimensione originale a stampa conclusa
-window.addEventListener('beforeprint', ()=>{
-  document.querySelectorAll('textarea').forEach(t=>{ t.style.height = (t.scrollHeight + 4) + 'px'; });
-});
-window.addEventListener('afterprint', ()=>{
-  document.querySelectorAll('textarea').forEach(t=>{ t.style.height = ''; });
-});
+// In stampa i campi del modulo non si comportano come testo di un documento:
+// un input di una riga taglia tutto ciò che eccede la sua larghezza e una
+// textarea taglia tutto ciò che eccede la sua altezza. Il testo tagliato non
+// finisce nel PDF: sparisce, e nessuno se ne accorge finché non serve.
+// Prima di stampare, ogni campo compilato viene quindi ricalcato in un blocco
+// statico che va a capo e cresce quanto serve; a stampa conclusa i ricalchi
+// vengono rimossi e il modulo torna esattamente com'era.
+function preparaValoriPerStampa(){
+  ripulisciValoriDiStampa();
+  document.querySelectorAll('input[type="text"], textarea').forEach(campo=>{
+    if(!campo.value.trim()) return;
+    const blocco = document.createElement('div');
+    blocco.className = 'print-value';
+    blocco.textContent = campo.value;
+    campo.classList.add('print-sostituito');
+    campo.insertAdjacentElement('afterend', blocco);
+  });
+}
 
+function ripulisciValoriDiStampa(){
+  document.querySelectorAll('.print-value').forEach(b=> b.remove());
+  document.querySelectorAll('.print-sostituito').forEach(c=> c.classList.remove('print-sostituito'));
+}
+
+window.addEventListener('beforeprint', preparaValoriPerStampa);
+window.addEventListener('afterprint', ripulisciValoriDiStampa);
+
+// ── Struttura del brief ───────────────────────────────────────────────────
+// Un solo elenco di sezioni alimenta sia la sintesi testuale sia il documento
+// Word: se un campo cambia etichetta va corretto qui e basta.
+const SEZIONI_BRIEF = [
+  ['Anagrafica commessa', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Posizione e metratura stand','Referente cliente','Account WES','Data raccolta brief','Data concordata per la presentazione delle proposta','Progettista WES','PM WES']],
+  ['Informazioni obbligatorie (must have)', ['Obiettivi e funzione dello stand','Brand identity','Documentazione fieristica','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
+  ['Approfondimenti desiderati (nice to have)', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Esperienze precedenti','Indirizzo di stile e design, riferimenti visivi']],
+  ['Note raccolte dal cliente', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
+  ['Decisione di progetto', ['Decisione di progetto']]
+];
+
+const ELENCO_ELEMENTI_STAND = 'Elementi richiesti per lo stand';
+
+function valoreDelCampo(etichetta){
+  const field = Array.from(document.querySelectorAll('.field')).find(f=>{
+    const l = f.querySelector('label');
+    return l && l.textContent.replace('*','').trim() === etichetta;
+  });
+  if(!field) return '';
+  const input = field.querySelector('input,textarea,select');
+  if(!input) return '';
+  if(input.type === 'checkbox') return input.checked ? 'Sì — raccolta confermata' : 'No — da richiedere al cliente';
+  return input.value.trim();
+}
+
+function elementiStand(){
+  return Array.from(document.querySelectorAll('.stand-element')).map(riga=>({
+    nome: riga.querySelector('.stand-element-name').textContent.trim(),
+    valore: riga.querySelector('select').value || '—',
+    nota: riga.querySelector('input[type="text"]').value.trim()
+  }));
+}
+
+function nomeCliente(){
+  return valoreDelCampo('Cliente') || 'Senza cliente';
+}
+
+// ── Sintesi testuale negli appunti ────────────────────────────────────────
 document.getElementById('btnCopy').addEventListener('click', ()=>{
-  const get = (label) => {
-    const field = Array.from(document.querySelectorAll('.field')).find(f=>{
-      const l = f.querySelector('label');
-      return l && l.textContent.replace('*','').trim() === label;
-    });
-    if(!field) return '';
-    const input = field.querySelector('input,textarea,select');
-    if(!input) return '';
-    if(input.type === 'checkbox') return input.checked ? 'Sì — raccolta confermata' : 'No — da richiedere al cliente';
-    return input.value;
-  };
-
-  const sections = [
-    ['ANAGRAFICA COMMESSA', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Posizione e metratura stand','Referente cliente','Account WES','Data raccolta brief','Data concordata per la presentazione delle proposta','Progettista WES','PM WES']],
-    ['INFORMAZIONI OBBLIGATORIE', ['Obiettivi e funzione dello stand','Brand identity','Documentazione fieristica','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
-    ['APPROFONDIMENTI DESIDERATI', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Esperienze precedenti','Indirizzo di stile e design, riferimenti visivi']],
-    ['NOTE RACCOLTE DAL CLIENTE', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
-    ['DECISIONE DI PROGETTO', ['Decisione di progetto']]
-  ];
-
   let out = 'BRIEF DI COMMESSA WES (FIERE)\n';
-  sections.forEach(([title, labels])=>{
-    out += `\n${title}\n`;
-    labels.forEach(l=>{
-      if(l === 'Elementi richiesti per lo stand'){
-        out += `Elementi richiesti per lo stand:\n`;
-        document.querySelectorAll('.stand-element').forEach(row=>{
-          const name = row.querySelector('.stand-element-name').textContent.trim();
-          const val = row.querySelector('select').value || '—';
-          const note = row.querySelector('input[type="text"]').value;
-          out += `- ${name}: ${val}${note ? ' — ' + note : ''}\n`;
+  SEZIONI_BRIEF.forEach(([titolo, etichette])=>{
+    out += `\n${titolo.toUpperCase()}\n`;
+    etichette.forEach(etichetta=>{
+      if(etichetta === ELENCO_ELEMENTI_STAND){
+        out += `${ELENCO_ELEMENTI_STAND}:\n`;
+        elementiStand().forEach(e=>{
+          out += `- ${e.nome}: ${e.valore}${e.nota ? ' — ' + e.nota : ''}\n`;
         });
         return;
       }
-      out += `${l}: ${get(l) || '—'}\n`;
+      out += `${etichetta}: ${valoreDelCampo(etichetta) || '—'}\n`;
     });
   });
-
   copiaNegliAppunti(out);
+});
+
+// ── Documento Word ────────────────────────────────────────────────────────
+// Il PDF di stampa è una fotografia del modulo: fedele, ma non modificabile e
+// vincolata alla larghezza dei campi. Il .docx è invece testo di un documento
+// vero — non può troncare nulla e chi riceve il brief lo può completare.
+//
+// Un .docx è uno ZIP di file XML: viene scritto qui a mano, con il metodo
+// "store" (nessuna compressione), per non legare a una libreria esterna un
+// widget che deve restare un unico file HTML apribile anche da disco.
+// La scorciatoia diffusa — un .doc che in realtà è HTML — è stata scartata:
+// Word la apre mostrando l'avviso «il formato del file non corrisponde
+// all'estensione», e chi il brief lo riceve e basta non deve vedere avvisi.
+
+function xmlEsc(testo){
+  return String(testo)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&apos;')
+    // I caratteri di controllo non sono ammessi in XML e farebbero
+    // considerare il file danneggiato da Word
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+}
+
+const FONT_DOCX = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>';
+
+// Gli a capo dentro un valore diventano interruzioni di riga Word
+function corseDocx(testo, proprieta){
+  const rPr = `<w:rPr>${FONT_DOCX}${proprieta || ''}</w:rPr>`;
+  return String(testo).split('\n').map((riga, i)=>
+    `<w:r>${rPr}${i ? '<w:br/>' : ''}<w:t xml:space="preserve">${xmlEsc(riga)}</w:t></w:r>`
+  ).join('');
+}
+
+function paragrafoDocx(testo, opzioni){
+  const o = opzioni || {};
+  return `<w:p><w:pPr>${o.ppr || ''}</w:pPr>${corseDocx(testo, o.rpr)}</w:p>`;
+}
+
+const MARGINI_CELLA =
+  '<w:tcMar><w:top w:w="70" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/>' +
+  '<w:left w:w="110" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar>';
+
+// w:tcW in percentuale si esprime in cinquantesimi di punto percentuale
+function cellaDocx(testo, opzioni){
+  const o = opzioni || {};
+  return '<w:tc><w:tcPr>' +
+    `<w:tcW w:w="${o.larghezza}" w:type="pct"/>` +
+    (o.sfondo ? `<w:shd w:val="clear" w:color="auto" w:fill="${o.sfondo}"/>` : '') +
+    MARGINI_CELLA +
+    '</w:tcPr>' +
+    paragrafoDocx(testo, { rpr: o.rpr }) +
+    '</w:tc>';
+}
+
+const BORDI_TABELLA = '<w:tblBorders>' +
+  ['top','left','bottom','right','insideH','insideV']
+    .map(b => `<w:${b} w:val="single" w:sz="4" w:space="0" w:color="DCDFDE"/>`).join('') +
+  '</w:tblBorders>';
+
+function tabellaDocx(righe, colonne){
+  if(!righe.length) return '';
+  return '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/>' + BORDI_TABELLA + '</w:tblPr>' +
+    `<w:tblGrid>${colonne.map(c => `<w:gridCol w:w="${c}"/>`).join('')}</w:tblGrid>` +
+    righe.join('') +
+    '</w:tbl>' +
+    // Word vuole un paragrafo fra due tabelle consecutive e a fine documento
+    '<w:p><w:pPr><w:spacing w:after="0" w:line="120" w:lineRule="exact"/></w:pPr></w:p>';
+}
+
+const STILE_ETICHETTA = '<w:b/><w:color w:val="5C6664"/><w:sz w:val="15"/><w:caps/>';
+const STILE_VALORE    = '<w:sz w:val="20"/>';
+const STILE_MANCANTE  = '<w:i/><w:color w:val="8A908F"/><w:sz w:val="20"/>';
+
+function rigaCampoDocx(etichetta, valore){
+  return '<w:tr>' +
+    cellaDocx(etichetta, { larghezza: 1600, sfondo: 'F6F8F7', rpr: STILE_ETICHETTA }) +
+    cellaDocx(valore || 'Da richiedere al cliente',
+              { larghezza: 3400, rpr: valore ? STILE_VALORE : STILE_MANCANTE }) +
+    '</w:tr>';
+}
+
+function corpoDocx(){
+  let corpo =
+    paragrafoDocx('Worldwide Exhibition System', {
+      rpr: '<w:b/><w:color w:val="1A7272"/><w:sz w:val="15"/><w:caps/>',
+      ppr: '<w:spacing w:after="40"/>'
+    }) +
+    paragrafoDocx('Brief di commessa (Fiere)', {
+      rpr: '<w:b/><w:sz w:val="34"/>',
+      ppr: '<w:spacing w:after="40"/>'
+    }) +
+    paragrafoDocx(nomeCliente(), {
+      rpr: '<w:color w:val="5C6664"/><w:sz w:val="20"/>',
+      ppr: '<w:spacing w:after="280"/>'
+    });
+
+  SEZIONI_BRIEF.forEach(([titolo, etichette])=>{
+    corpo += paragrafoDocx(titolo, {
+      rpr: '<w:b/><w:color w:val="1A7272"/><w:sz w:val="22"/>',
+      ppr: '<w:spacing w:before="320" w:after="120"/>' +
+           '<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="1A7272"/></w:pBdr>'
+    });
+
+    // L'elenco degli elementi stand è una tabella a sé: spezza quella della
+    // sezione, che riprende dopo con i campi rimanenti.
+    let righe = [];
+    etichette.forEach(etichetta=>{
+      if(etichetta === ELENCO_ELEMENTI_STAND){
+        corpo += tabellaDocx(righe, [3084, 6554]);
+        righe = [];
+        corpo += paragrafoDocx(ELENCO_ELEMENTI_STAND, {
+          rpr: '<w:b/><w:sz w:val="19"/>',
+          ppr: '<w:spacing w:before="200" w:after="100"/>'
+        });
+        corpo += tabellaDocx(elementiStand().map(e =>
+          '<w:tr>' +
+          cellaDocx(e.nome, { larghezza: 1600, sfondo: 'F6F8F7', rpr: '<w:b/><w:sz w:val="19"/>' }) +
+          cellaDocx(e.valore, { larghezza: 500, rpr: STILE_VALORE }) +
+          cellaDocx(e.nota || '—', { larghezza: 2900, rpr: e.nota ? STILE_VALORE : STILE_MANCANTE }) +
+          '</w:tr>'
+        ), [3084, 964, 5590]);
+        return;
+      }
+      righe.push(rigaCampoDocx(etichetta, valoreDelCampo(etichetta)));
+    });
+    corpo += tabellaDocx(righe, [3084, 6554]);
+  });
+
+  const generatoIl = new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'long', year:'numeric' });
+  corpo += paragrafoDocx(`Documento generato dal modulo di raccolta brief WES il ${generatoIl}.`, {
+    rpr: '<w:color w:val="5C6664"/><w:sz w:val="15"/>',
+    ppr: '<w:spacing w:before="320"/>'
+  });
+
+  return corpo;
+}
+
+// ── Confezionamento dello ZIP ─────────────────────────────────────────────
+const TABELLA_CRC = (()=>{
+  const t = new Uint32Array(256);
+  for(let n = 0; n < 256; n++){
+    let c = n;
+    for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(byte){
+  let c = 0xFFFFFFFF;
+  for(let i = 0; i < byte.length; i++) c = TABELLA_CRC[(c ^ byte[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function creaZip(voci){
+  const enc = new TextEncoder();
+  const file = voci.map(v => ({
+    nome: enc.encode(v.nome),
+    dati: enc.encode(v.contenuto)
+  }));
+
+  const dimensioneLocali = file.reduce((n, f) => n + 30 + f.nome.length + f.dati.length, 0);
+  const dimensioneCentrale = file.reduce((n, f) => n + 46 + f.nome.length, 0);
+  const buffer = new ArrayBuffer(dimensioneLocali + dimensioneCentrale + 22);
+  const vista = new DataView(buffer);
+  const byte = new Uint8Array(buffer);
+
+  let pos = 0;
+  file.forEach(f=>{
+    f.offset = pos;
+    f.crc = crc32(f.dati);
+    vista.setUint32(pos, 0x04034b50, true);      // firma intestazione locale
+    vista.setUint16(pos + 4, 20, true);          // versione necessaria
+    vista.setUint16(pos + 6, 0x0800, true);      // nomi in UTF-8
+    vista.setUint16(pos + 8, 0, true);           // metodo: store
+    vista.setUint16(pos + 10, 0, true);          // ora
+    vista.setUint16(pos + 12, 0x0021, true);     // data: 1980-01-01
+    vista.setUint32(pos + 14, f.crc, true);
+    vista.setUint32(pos + 18, f.dati.length, true);
+    vista.setUint32(pos + 22, f.dati.length, true);
+    vista.setUint16(pos + 26, f.nome.length, true);
+    vista.setUint16(pos + 28, 0, true);          // campo extra assente
+    pos += 30;
+    byte.set(f.nome, pos); pos += f.nome.length;
+    byte.set(f.dati, pos); pos += f.dati.length;
+  });
+
+  const inizioCentrale = pos;
+  file.forEach(f=>{
+    vista.setUint32(pos, 0x02014b50, true);      // firma indice centrale
+    vista.setUint16(pos + 4, 20, true);
+    vista.setUint16(pos + 6, 20, true);
+    vista.setUint16(pos + 8, 0x0800, true);
+    vista.setUint16(pos + 10, 0, true);
+    vista.setUint16(pos + 12, 0, true);
+    vista.setUint16(pos + 14, 0x0021, true);
+    vista.setUint32(pos + 16, f.crc, true);
+    vista.setUint32(pos + 20, f.dati.length, true);
+    vista.setUint32(pos + 24, f.dati.length, true);
+    vista.setUint16(pos + 28, f.nome.length, true);
+    vista.setUint16(pos + 30, 0, true);          // extra
+    vista.setUint16(pos + 32, 0, true);          // commento
+    vista.setUint16(pos + 34, 0, true);          // disco
+    vista.setUint16(pos + 36, 0, true);          // attributi interni
+    vista.setUint32(pos + 38, 0, true);          // attributi esterni
+    vista.setUint32(pos + 42, f.offset, true);
+    pos += 46;
+    byte.set(f.nome, pos); pos += f.nome.length;
+  });
+
+  vista.setUint32(pos, 0x06054b50, true);        // fine indice centrale
+  vista.setUint16(pos + 8, file.length, true);
+  vista.setUint16(pos + 10, file.length, true);
+  vista.setUint32(pos + 12, pos - inizioCentrale, true);
+  vista.setUint32(pos + 16, inizioCentrale, true);
+
+  return buffer;
+}
+
+const TIPI_CONTENUTO =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+  '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+  '<Default Extension="xml" ContentType="application/xml"/>' +
+  '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+  '</Types>';
+
+const RELAZIONI =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  '<Relationship Id="rId1" Target="word/document.xml" ' +
+  'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"/>' +
+  '</Relationships>';
+
+function creaDocx(){
+  const documento =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' +
+    corpoDocx() +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" ' +
+    'w:header="0" w:footer="0" w:gutter="0"/></w:sectPr>' +
+    '</w:body></w:document>';
+
+  return creaZip([
+    { nome: '[Content_Types].xml', contenuto: TIPI_CONTENUTO },
+    { nome: '_rels/.rels', contenuto: RELAZIONI },
+    { nome: 'word/document.xml', contenuto: documento }
+  ]);
+}
+
+function nomeFileWord(){
+  const cliente = nomeCliente().replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 60);
+  return `Brief di commessa WES — ${cliente}.docx`;
+}
+
+document.getElementById('btnWord').addEventListener('click', ()=>{
+  let url;
+  try{
+    const blob = new Blob([creaDocx()], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nomeFileWord();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    mostraToast('Documento Word scaricato', false);
+  } catch(e){
+    console.error('[word]', e);
+    mostraToast('Generazione del Word non riuscita: usa Stampa / PDF', true);
+  } finally{
+    // Il revoke immediato, in alcuni browser, annulla il download appena avviato
+    if(url) setTimeout(()=> URL.revokeObjectURL(url), 10000);
+  }
 });
 
 // l'API asincrona degli appunti esiste solo in contesto sicuro (file:// e
