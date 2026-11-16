@@ -682,6 +682,13 @@
       border-color:#dcdfde !important;
     }
     header.doc-head, section.block{break-inside:avoid;page-break-inside:avoid;}
+    /* La sezione dei must have supera ormai le due pagine, quindi il browser
+       ignora il suo break-inside e interrompe dove capita. Le singole righe
+       degli elementi sì che ci stanno in una pagina: tenendole unite, il nome
+       dell'elemento non resta in fondo a un foglio con la sua nota sul
+       successivo. Non si estende ai campi normali: una textarea lunga può da sola
+       superare la pagina, e tenerla unita lascerebbe mezzo foglio bianco. */
+    .stand-element{break-inside:avoid;page-break-inside:avoid;}
     .check-confirm input[type="checkbox"]{display:none !important;}
     .check-confirm::before{content:'\2610';font-size:15px;line-height:1.2;color:#08090b;}
     .check-confirm.filled::before{content:'\2611';}
