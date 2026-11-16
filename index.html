@@ -1503,6 +1503,19 @@
 
         <div class="stand-element">
           <div class="stand-element-head">
+            <label for="f-stand-sgabuzzino" class="stand-element-name">Sgabuzzino</label>
+            <select id="f-stand-sgabuzzino" required aria-required="true">
+              <option value="">— seleziona —</option>
+              <option>Sì</option>
+              <option>No</option>
+            </select>
+          </div>
+          <label for="f-stand-sgabuzzino-note" class="sr-only">Nota su Sgabuzzino</label>
+          <input type="text" id="f-stand-sgabuzzino-note" placeholder="Di quali dimensioni? Con quale dotazione (scaffalature, appendiabiti, etc.)?">
+        </div>
+
+        <div class="stand-element">
+          <div class="stand-element-head">
             <label for="f-stand-cucina" class="stand-element-name">Cucina separata dal magazzino/guardaroba</label>
             <select id="f-stand-cucina" required aria-required="true">
               <option value="">— seleziona —</option>
@@ -1877,32 +1890,107 @@ window.addEventListener('afterprint', ripulisciValoriDiStampa);
 // ── Struttura del brief ───────────────────────────────────────────────────
 // Un solo elenco di sezioni alimenta sia la sintesi testuale sia il documento
 // Word: se un campo cambia etichetta va corretto qui e basta.
+// Una voce di sezione è l'etichetta di un campo, oppure un sottogruppo con un
+// titolo proprio — gli stessi riquadri che il modulo mostra a video: «Team WES
+// assegnato» dentro l'anagrafica, «Elementi richiesti per lo stand» fra i must
+// have. Un sottogruppo interrompe l'elenco dei campi e riprende dopo.
+const ELENCO_ELEMENTI_STAND = 'Elementi richiesti per lo stand';
+
 const SEZIONI_BRIEF = [
-  ['Anagrafica commessa', ['Cliente','Fiera ed edizione','Data di inizio','Data di fine','Posizione e metratura stand','Referente cliente','Account WES','Data raccolta brief','Data concordata per la presentazione delle proposta','Progettista WES','PM WES']],
-  ['Informazioni obbligatorie (must have)', ['Obiettivi e funzione dello stand','Brand identity','Documentazione fieristica','Personale interno in fiera','Budget indicativo','Elementi richiesti per lo stand','Servizi accessori']],
-  ['Approfondimenti desiderati (nice to have)', ['Concorrenti di riferimento in fiera','Obiettivi di comunicazione','Esperienze precedenti','Indirizzo di stile e design, riferimenti visivi']],
-  ['Note raccolte dal cliente', ['Informazioni non scritte, preferenze o vincoli emersi nella conversazione']],
+  ['Anagrafica commessa', [
+    'Cliente',
+    'Fiera ed edizione',
+    'Data di inizio',
+    'Data di fine',
+    'Posizione e metratura stand',
+    'Referente cliente',
+    'Data raccolta brief',
+    'Data concordata per la presentazione delle proposta',
+    { sottotitolo: 'Team WES assegnato', campi: ['Account WES','Progettista WES','PM WES'] }
+  ]],
+  ['Informazioni obbligatorie (must have)', [
+    'Obiettivi e funzione dello stand',
+    'Brand identity',
+    'Documentazione fieristica',
+    'Personale interno in fiera',
+    'Budget indicativo',
+    { sottotitolo: ELENCO_ELEMENTI_STAND, elementiStand: true },
+    'Servizi accessori'
+  ]],
+  ['Approfondimenti desiderati (nice to have)', [
+    'Concorrenti di riferimento in fiera',
+    'Obiettivi di comunicazione',
+    'Esperienze precedenti',
+    'Indirizzo di stile e design, riferimenti visivi'
+  ]],
+  ['Note raccolte dal cliente', [
+    'Informazioni non scritte, preferenze o vincoli emersi nella conversazione'
+  ]],
   ['Decisione di progetto', ['Decisione di progetto']]
 ];
 
-const ELENCO_ELEMENTI_STAND = 'Elementi richiesti per lo stand';
-
-function valoreDelCampo(etichetta){
+function campoDelModulo(etichetta){
   const field = Array.from(document.querySelectorAll('.field')).find(f=>{
     const l = f.querySelector('label');
     return l && l.textContent.replace('*','').trim() === etichetta;
   });
-  if(!field) return '';
-  const input = field.querySelector('input,textarea,select');
+  return field ? field.querySelector('input,textarea,select') : null;
+}
+
+function valoreDelCampo(etichetta){
+  const input = campoDelModulo(etichetta);
   if(!input) return '';
   if(input.type === 'checkbox') return input.checked ? 'Sì — raccolta confermata' : 'No — da richiedere al cliente';
   return input.value.trim();
 }
 
+const SEZIONE_NICE_TO_HAVE = 'Approfondimenti desiderati (nice to have)';
+
+const DA_RICHIEDERE = 'Da richiedere al cliente';
+const NON_SPECIFICATO = 'Non specificato';
+
+// Campi la cui assenza va solo registrata, non trasformata in una richiesta:
+// date e logistica che spesso si definiscono dopo, e gli appunti del
+// commerciale, che il cliente non c'entra.
+const CAMPI_NON_SPECIFICATI = new Set([
+  'Data di inizio',
+  'Data di fine',
+  'Posizione e metratura stand',
+  'Referente cliente',
+  'Data raccolta brief',
+  'Data concordata per la presentazione delle proposta',
+  'Informazioni non scritte, preferenze o vincoli emersi nella conversazione'
+]);
+
+// Un campo vuoto non vuol dire sempre la stessa cosa, e scrivere ovunque
+// «Da richiedere al cliente» finisce per far chiedere al cliente cose che non
+// lo riguardano: chi è il progettista assegnato, per dirne una.
+//  · Le tendine portano già nella voce vuota la dicitura giusta («Non ancora
+//    assegnato», «Da valutare»): si riusa quella, così il documento resta
+//    allineato da sé se un domani la tendina cambia.
+//  · Nei nice to have, e nei campi elencati qui sopra, il vuoto dice che
+//    l'argomento non è stato toccato.
+//  · Resta «Da richiedere al cliente» dove il dato manca davvero al cliente e
+//    senza di esso la progettazione non si avvia: i must have e l'anagrafica
+//    di commessa.
+function assenzaDelCampo(etichetta, sezione){
+  const input = campoDelModulo(etichetta);
+  if(input && input.tagName === 'SELECT'){
+    const vuota = Array.from(input.options).find(o => o.value === '');
+    const dicitura = vuota ? vuota.textContent.trim() : '';
+    if(dicitura) return dicitura;
+  }
+  if(sezione === SEZIONE_NICE_TO_HAVE || CAMPI_NON_SPECIFICATI.has(etichetta)) return NON_SPECIFICATO;
+  return DA_RICHIEDERE;
+}
+
+// «valore» resta vuoto se nessuno ha risposto Sì/No: ogni uscita decide da sé
+// come segnalarlo, perché nel documento Word quella mancanza è un must have
+// non soddisfatto, mentre nella sintesi testuale basta un trattino.
 function elementiStand(){
   return Array.from(document.querySelectorAll('.stand-element')).map(riga=>({
     nome: riga.querySelector('.stand-element-name').textContent.trim(),
-    valore: riga.querySelector('select').value || '—',
+    valore: riga.querySelector('select').value,
     nota: riga.querySelector('input[type="text"]').value.trim()
   }));
 }
@@ -1913,18 +2001,22 @@ function nomeCliente(){
 
 // ── Sintesi testuale negli appunti ────────────────────────────────────────
 document.getElementById('btnCopy').addEventListener('click', ()=>{
+  const rigaCampo = (etichetta)=> `${etichetta}: ${valoreDelCampo(etichetta) || '—'}\n`;
+
   let out = 'BRIEF DI COMMESSA WES (FIERE)\n';
-  SEZIONI_BRIEF.forEach(([titolo, etichette])=>{
+  SEZIONI_BRIEF.forEach(([titolo, voci])=>{
     out += `\n${titolo.toUpperCase()}\n`;
-    etichette.forEach(etichetta=>{
-      if(etichetta === ELENCO_ELEMENTI_STAND){
-        out += `${ELENCO_ELEMENTI_STAND}:\n`;
+    voci.forEach(voce=>{
+      if(typeof voce === 'string'){ out += rigaCampo(voce); return; }
+
+      out += `${voce.sottotitolo}:\n`;
+      if(voce.elementiStand){
         elementiStand().forEach(e=>{
-          out += `- ${e.nome}: ${e.valore}${e.nota ? ' — ' + e.nota : ''}\n`;
+          out += `- ${e.nome}: ${e.valore || '—'}${e.nota ? ' — ' + e.nota : ''}\n`;
         });
-        return;
+      } else {
+        voce.campi.forEach(e=>{ out += '- ' + rigaCampo(e); });
       }
-      out += `${etichetta}: ${valoreDelCampo(etichetta) || '—'}\n`;
     });
   });
   copiaNegliAppunti(out);
@@ -2001,11 +2093,30 @@ const STILE_ETICHETTA = '<w:b/><w:color w:val="5C6664"/><w:sz w:val="15"/><w:cap
 const STILE_VALORE    = '<w:sz w:val="20"/>';
 const STILE_MANCANTE  = '<w:i/><w:color w:val="8A908F"/><w:sz w:val="20"/>';
 
-function rigaCampoDocx(etichetta, valore){
+function rigaCampoDocx(etichetta, valore, assenza){
   return '<w:tr>' +
     cellaDocx(etichetta, { larghezza: 1600, sfondo: 'F6F8F7', rpr: STILE_ETICHETTA }) +
-    cellaDocx(valore || 'Da richiedere al cliente',
+    cellaDocx(valore || assenza,
               { larghezza: 3400, rpr: valore ? STILE_VALORE : STILE_MANCANTE }) +
+    '</w:tr>';
+}
+
+// Larghezze in twip, da far quadrare con la pagina utile (9638 twip) e con le
+// percentuali passate a cellaDocx: 32/68 per i campi, 32/17/51 per gli
+// elementi. La colonna della risposta è più larga del necessario per «Sì»
+// perché deve reggere anche «Da richiedere al cliente».
+const COLONNE_CAMPI = [3084, 6554];
+const COLONNE_ELEMENTI = [3084, 1638, 4916];
+
+// Un elemento senza risposta Sì/No è un must have non soddisfatto, non un
+// dettaglio mancante: va segnalato come tale, non con un trattino.
+function rigaElementoStandDocx(e){
+  return '<w:tr>' +
+    cellaDocx(e.nome, { larghezza: 1600, sfondo: 'F6F8F7', rpr: '<w:b/><w:sz w:val="19"/>' }) +
+    cellaDocx(e.valore || DA_RICHIEDERE,
+              { larghezza: 850, rpr: e.valore ? STILE_VALORE : STILE_MANCANTE }) +
+    cellaDocx(e.nota || '—',
+              { larghezza: 2550, rpr: e.nota ? STILE_VALORE : STILE_MANCANTE }) +
     '</w:tr>';
 }
 
@@ -2024,36 +2135,33 @@ function corpoDocx(){
       ppr: '<w:spacing w:after="280"/>'
     });
 
-  SEZIONI_BRIEF.forEach(([titolo, etichette])=>{
+  SEZIONI_BRIEF.forEach(([titolo, voci])=>{
     corpo += paragrafoDocx(titolo, {
       rpr: '<w:b/><w:color w:val="1A7272"/><w:sz w:val="22"/>',
       ppr: '<w:spacing w:before="320" w:after="120"/>' +
            '<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="1A7272"/></w:pBdr>'
     });
 
-    // L'elenco degli elementi stand è una tabella a sé: spezza quella della
-    // sezione, che riprende dopo con i campi rimanenti.
+    // Un sottogruppo interrompe la tabella della sezione, stampa il proprio
+    // titolo e la propria tabella, poi la sezione riprende da dove era.
     let righe = [];
-    etichette.forEach(etichetta=>{
-      if(etichetta === ELENCO_ELEMENTI_STAND){
-        corpo += tabellaDocx(righe, [3084, 6554]);
-        righe = [];
-        corpo += paragrafoDocx(ELENCO_ELEMENTI_STAND, {
-          rpr: '<w:b/><w:sz w:val="19"/>',
-          ppr: '<w:spacing w:before="200" w:after="100"/>'
-        });
-        corpo += tabellaDocx(elementiStand().map(e =>
-          '<w:tr>' +
-          cellaDocx(e.nome, { larghezza: 1600, sfondo: 'F6F8F7', rpr: '<w:b/><w:sz w:val="19"/>' }) +
-          cellaDocx(e.valore, { larghezza: 500, rpr: STILE_VALORE }) +
-          cellaDocx(e.nota || '—', { larghezza: 2900, rpr: e.nota ? STILE_VALORE : STILE_MANCANTE }) +
-          '</w:tr>'
-        ), [3084, 964, 5590]);
-        return;
-      }
-      righe.push(rigaCampoDocx(etichetta, valoreDelCampo(etichetta)));
+    const chiudiTabella = ()=>{ corpo += tabellaDocx(righe, COLONNE_CAMPI); righe = []; };
+    const rigaDi = (etichetta)=>
+      rigaCampoDocx(etichetta, valoreDelCampo(etichetta), assenzaDelCampo(etichetta, titolo));
+
+    voci.forEach(voce=>{
+      if(typeof voce === 'string'){ righe.push(rigaDi(voce)); return; }
+
+      chiudiTabella();
+      corpo += paragrafoDocx(voce.sottotitolo, {
+        rpr: '<w:b/><w:sz w:val="19"/>',
+        ppr: '<w:spacing w:before="200" w:after="100"/>'
+      });
+      corpo += voce.elementiStand
+        ? tabellaDocx(elementiStand().map(rigaElementoStandDocx), COLONNE_ELEMENTI)
+        : tabellaDocx(voce.campi.map(rigaDi), COLONNE_CAMPI);
     });
-    corpo += tabellaDocx(righe, [3084, 6554]);
+    chiudiTabella();
   });
 
   const generatoIl = new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'long', year:'numeric' });
